@@ -12,14 +12,15 @@ app_license = "mit"
 
 # Each item in the list will be shown as an app in the apps page
 add_to_apps_screen = [
-	{
+    {
 		"name": "connect_master",
 		"logo": "/assets/connect_master//images/radar-logo.png",
 		"title": "Connect Master",
-		"route": "/connect_master",
+		"route": "/prism",
 		#"has_permission": "connect_master.api.permission.has_app_permission"
 	}
 ]
+	
 
 # Includes in <head>
 # ------------------

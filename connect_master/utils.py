@@ -8,8 +8,8 @@ def after_install():
 
 def after_uninstall():
     """Remove roles and permissions when app is uninstalled."""
-    remove_role_permissions()
-    remove_roles()
+    # remove_role_permissions()
+    disable_roles()
 
 def create_roles():
     """Create required roles for the application."""
@@ -87,13 +87,15 @@ def set_role_permissions():
             "amend": 0
         }).insert()
 
-def remove_roles():
-    """Remove the custom roles when the app is uninstalled."""
-    roles_to_remove = ["Customer", "Territory Admin", "Partner Admin"]
+def disable_roles():
+    """Disable the custom roles when the app is uninstalled."""
+    roles_to_disable = ["Customer", "Territory Admin", "Partner Admin"]
     
-    for role_name in roles_to_remove:
+    for role_name in roles_to_disable:
         if frappe.db.exists("Role", role_name):
-            frappe.delete_doc("Role", role_name)
+            role = frappe.get_doc("Role", role_name)
+            role.disabled = 1
+            role.save()
 
 def remove_role_permissions():
     """Remove role permissions when the app is uninstalled."""
