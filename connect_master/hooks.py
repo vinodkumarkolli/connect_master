@@ -11,15 +11,15 @@ app_license = "mit"
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "connect_master",
-# 		"logo": "/assets/connect_master/logo.png",
-# 		"title": "Connect Master",
-# 		"route": "/connect_master",
-# 		"has_permission": "connect_master.api.permission.has_app_permission"
-# 	}
-# ]
+add_to_apps_screen = [
+	{
+		"name": "connect_master",
+		"logo": "/assets/connect_master//images/radar-logo.png",
+		"title": "Connect Master",
+		"route": "/connect_master",
+		#"has_permission": "connect_master.api.permission.has_app_permission"
+	}
+]
 
 # Includes in <head>
 # ------------------
@@ -86,13 +86,13 @@ app_license = "mit"
 # ------------
 
 # before_install = "connect_master.install.before_install"
-# after_install = "connect_master.install.after_install"
+after_install = "connect_master.utils.after_install"
 
 # Uninstallation
 # ------------
 
 # before_uninstall = "connect_master.uninstall.before_uninstall"
-# after_uninstall = "connect_master.uninstall.after_uninstall"
+after_uninstall = "connect_master.utils.after_uninstall"
 
 # Integration Setup
 # ------------------
