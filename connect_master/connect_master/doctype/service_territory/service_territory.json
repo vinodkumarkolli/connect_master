@@ -66,10 +66,12 @@
    "unique": 1
   },
   {
+   "allow_in_quick_entry": 1,
    "default": "1",
    "fieldname": "allow_in_search",
    "fieldtype": "Check",
-   "label": "Allow in Search"
+   "label": "Allow in Search",
+   "read_only_depends_on": "eval: doc.is_group === 0"
   },
   {
    "fieldname": "column_break_opcv",
@@ -80,7 +82,7 @@
  "index_web_pages_for_search": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2025-12-24 23:48:00.831831",
+ "modified": "2025-12-28 18:43:36.815067",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Service Territory",
@@ -99,6 +101,35 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Territory Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Partner Admin",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Customer",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",
