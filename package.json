@@ -1,0 +1,15 @@
+{
+  "name": "connect_master",
+  "version": "1.0.0",
+  "description": "This is the new Sravi Enterprises attempt to design and develop an application to connect the orders placed by the customers to the channel partners",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "cd flex && yarn install",
+    "dev": "cd flex && yarn dev",
+    "build": "cd flex && yarn build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

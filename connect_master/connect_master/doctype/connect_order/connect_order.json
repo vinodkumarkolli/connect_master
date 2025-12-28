@@ -1,0 +1,165 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-28 19:07:37.601522",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_x2fx",
+  "amended_from",
+  "order_date",
+  "service_category",
+  "resolved_territory",
+  "order_status",
+  "column_break_ixzz",
+  "delivery_address",
+  "address_html",
+  "contact",
+  "contact_html",
+  "user",
+  "section_break_ajxs",
+  "items",
+  "section_break_ikwc",
+  "order_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_x2fx",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Connect Order",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "order_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Order Timestamp",
+   "reqd": 1
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "Ordered By",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_ixzz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "delivery_address",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Delivery Address",
+   "options": "Address",
+   "reqd": 1
+  },
+  {
+   "fieldname": "address_html",
+   "fieldtype": "HTML",
+   "label": "Address HTML"
+  },
+  {
+   "fieldname": "resolved_territory",
+   "fieldtype": "Link",
+   "label": "Resolved Territory",
+   "options": "Service Territory",
+   "reqd": 1
+  },
+  {
+   "fieldname": "service_category",
+   "fieldtype": "Link",
+   "label": "Service Category",
+   "options": "Service Channel",
+   "reqd": 1
+  },
+  {
+   "fieldname": "order_notes",
+   "fieldtype": "Small Text",
+   "label": "Order Notes"
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "options": "Contact",
+   "reqd": 1
+  },
+  {
+   "fieldname": "contact_html",
+   "fieldtype": "HTML",
+   "label": "Contact HTML"
+  },
+  {
+   "fieldname": "section_break_ajxs",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Connect Line Item"
+  },
+  {
+   "fieldname": "section_break_ikwc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "order_status",
+   "fieldtype": "Select",
+   "label": "Order Status",
+   "options": "Initiated\nAbandoned\nSubmitted\nAssigned\nAccepted\nRejected\nHeld\nCancelled\nFulfilled",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-12-28 19:16:56.166802",
+ "modified_by": "Administrator",
+ "module": "Connect Master",
+ "name": "Connect Order",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

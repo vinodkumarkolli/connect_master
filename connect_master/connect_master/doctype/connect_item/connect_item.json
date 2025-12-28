@@ -1,49 +1,64 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:channel_shorthand",
- "creation": "2025-12-28 18:45:38.914362",
+ "autoname": "field:item_code",
+ "creation": "2025-12-28 18:49:27.483009",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "channel_name",
-  "channel_description",
-  "column_break_glbw",
-  "channel_shorthand"
+  "item_name",
+  "item_code",
+  "column_break_bpgt",
+  "item_image",
+  "image_html",
+  "item_mrp"
  ],
  "fields": [
   {
-   "fieldname": "channel_name",
+   "fieldname": "item_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Channel Name",
+   "label": "Item Name",
    "reqd": 1
   },
   {
-   "fieldname": "channel_description",
-   "fieldtype": "Small Text",
-   "label": "Channel Description"
+   "fieldname": "item_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item Code",
+   "reqd": 1,
+   "unique": 1
   },
   {
-   "fieldname": "column_break_glbw",
+   "fieldname": "column_break_bpgt",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "channel_shorthand",
-   "fieldtype": "Data",
+   "fieldname": "item_image",
+   "fieldtype": "Attach Image",
+   "label": "Item Image"
+  },
+  {
+   "fieldname": "image_html",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "item_mrp",
+   "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Channel Shorthand",
-   "reqd": 1,
-   "unique": 1
+   "label": "Item MRP",
+   "non_negative": 1,
+   "precision": "2",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-28 19:06:17.687635",
+ "modified": "2025-12-28 19:05:43.692274",
  "modified_by": "Administrator",
  "module": "Connect Master",
- "name": "Service Channel",
+ "name": "Connect Item",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
@@ -101,5 +116,5 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "channel_name"
+ "title_field": "item_name"
 }
