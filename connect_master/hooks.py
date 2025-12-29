@@ -61,9 +61,11 @@ add_to_apps_screen = [
 # home_page = "login"
 
 # website user home page (by Role)
-# role_home_page = {
-# 	"Role": "home_page"
-# }
+role_home_page = {
+	"Customer": "koda",
+    "Partner Admin":"desk",
+    "Territory Admin":"desk"
+}
 
 # Generators
 # ----------

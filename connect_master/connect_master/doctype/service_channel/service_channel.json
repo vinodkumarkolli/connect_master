@@ -9,7 +9,8 @@
   "channel_name",
   "channel_description",
   "column_break_glbw",
-  "channel_shorthand"
+  "channel_shorthand",
+  "disabled"
  ],
  "fields": [
   {
@@ -35,12 +36,18 @@
    "label": "Channel Shorthand",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-28 23:38:58.823459",
+ "modified": "2025-12-29 15:09:37.398984",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Service Channel",

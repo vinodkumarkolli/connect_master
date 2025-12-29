@@ -13,6 +13,7 @@
   "old_parent",
   "territory_name",
   "allow_in_search",
+  "disabled",
   "column_break_opcv",
   "parent_service_territory"
  ],
@@ -55,6 +56,7 @@
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "label": "Parent Service Territory",
+   "link_filters": "[[\"Service Territory\",\"is_group\",\"=\",1]]",
    "options": "Service Territory"
   },
   {
@@ -76,13 +78,19 @@
   {
    "fieldname": "column_break_opcv",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2025-12-28 19:06:00.611797",
+ "modified": "2025-12-29 21:41:09.510224",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Service Territory",
