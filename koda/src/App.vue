@@ -1,16 +1,14 @@
 <template>
   <div class="flex flex-col min-h-screen">
     <header class="flex items-center justify-between px-6 py-4 border-b bg-white">
-      <div class="text-xl font-bold">Koda</div>
+      <div class="text-xl font-bold cursor-pointer" @click="router.push('/')">Koda</div>
       <div>
         <div v-if="session.data && session.data !== 'Guest'" class="flex items-center gap-2">
-          <Dropdown :options="userMenuOptions">
-            <template #default>
-              <button class="flex items-center gap-2 focus:outline-none">
-                <Avatar :label="session.data" />
-              </button>
-            </template>
-          </Dropdown>
+          <CustomDropdown :options="userMenuOptions">
+            <button class="flex items-center gap-2 focus:outline-none">
+              <Avatar :label="session.data" />
+            </button>
+          </CustomDropdown>
         </div>
         <div v-else>
           <a href="/login" class="text-sm font-medium text-gray-700 hover:text-gray-900">Login</a>
@@ -25,8 +23,11 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
-import { Avatar, Dropdown, createResource, frappeRequest } from 'frappe-ui'
+import { useRouter } from 'vue-router'
+import { Avatar, createResource, frappeRequest } from 'frappe-ui'
+import CustomDropdown from './components/CustomDropdown.vue'
 
+const router = useRouter()
 const session = reactive({
   data: 'Guest'
 })
@@ -41,27 +42,16 @@ onMounted(async () => {
 })
 
 const logout = createResource({
-  url: 'logout',
+  url: '/api/method/logout',
   onSuccess() {
-    window.location.reload()
+    window.location.href = '/'
+  },
+  onError(error) {
+    console.error('Logout failed:', error)
   },
 })
 
 const userMenuOptions = [
-  {
-    label: 'Orders',
-    onClick: () => {
-      // Navigate to orders
-      console.log('Navigate to orders')
-    },
-  },
-  {
-    label: 'Manage',
-    onClick: () => {
-      // Navigate to manage
-      console.log('Navigate to manage')
-    },
-  },
   {
     label: 'Signout',
     onClick: () => {

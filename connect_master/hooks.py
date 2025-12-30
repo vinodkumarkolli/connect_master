@@ -252,6 +252,15 @@ after_uninstall = "connect_master.utils.after_uninstall"
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
-
+fixtures = [
+    # Export all Custom Fields
+    {"dt": "Custom Field","filters": [["module", "in", ["Connect Master"]]]},
+    # Export all Property Setters
+    {"dt": "Service Territory"},
+    # Export specific Clients Scripts
+    {"dt": "Service Channel"},
+    # Export specific DocType records
+    {"dt": "Connect Item"}
+]
 
 website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}, {'from_route': '/flex/<path:app_path>', 'to_route': 'flex'},]

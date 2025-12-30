@@ -22,105 +22,136 @@
                         <div class="font-bold truncate" :title="item.item_name">{{ item.item_name }}</div>
                         <div class="text-gray-600 text-sm">{{ formatCurrency(item.item_mrp) }}</div>
                     </div>
-                    <Input
-                        type="number"
-                        label="Qty"
-                        v-model.number="cart[item.name]"
-                        min="0"
-                        placeholder="0"
-                    />
+                    <div class="mt-2">
+                        <Input
+                            type="number"
+                            label="Qty"
+                            v-model.number="cart[item.name]"
+                            min="0"
+                            placeholder="0"
+                            class="w-24"
+                        />
+                    </div>
                 </div>
             </div>
           </div>
           <div class="mt-6 flex justify-end">
-            <Button variant="solid" size="lg" @click="currentStep = 2" :disabled="!hasItemsInCart">
-                Next: Service Channel
-            </Button>
+          <Button appearance="primary" size="lg" @click="currentStep = 2" :disabled="!hasItemsInCart">
+              Next: Address
+          </Button>
+        </div>
+      </div>
+
+      <!-- Step 2: Address -->
+      <div v-else-if="currentStep === 2">
+          <h2 class="text-2xl font-bold mb-6">Select Address</h2>
+          <div v-if="addresses.loading">Loading...</div>
+          <div v-else class="space-y-4">
+              
+              <div v-if="isCustomer" class="flex flex-col md:flex-row gap-6">
+                  <div class="md:w-1/3 flex flex-col gap-2">
+                      <Button appearance="success" class="w-full md:w-auto" @click="showAddressDialog = true">
+                          Change Delivery Address
+                      </Button>
+                      <Button appearance="danger" class="w-full md:w-auto" @click="navigateToManage">
+                          Manage Addresses
+                      </Button>
+                  </div>
+
+                  <div class="md:w-2/3">
+                      <div v-if="selectedAddress" class="border p-4 rounded-lg bg-white shadow-sm">
+                          <div class="flex justify-between items-start">
+                              <div>
+                                  <div class="font-bold text-gray-900">{{ getAddressTitle(selectedAddress) }}</div>
+                                  <div class="text-gray-600 text-sm mt-2 leading-relaxed">
+                                      {{ getAddressDetails(selectedAddress) }}
+                                  </div>
+                              </div>
+                              <div v-if="isAddressDefault(selectedAddress)" class="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                  Default
+                              </div>
+                          </div>
+                      </div>
+                      <div v-else class="text-gray-500 italic p-4 border border-dashed rounded-lg text-center">
+                          No address selected. Please select a delivery address.
+                      </div>
+                  </div>
+              </div>
+
+              <div v-else class="space-y-4">
+                  <Input v-model="addressSearch" placeholder="Search Address..." />
+                  <div
+                      v-for="addr in filteredAddresses"
+                      :key="addr.name"
+                      class="border p-4 rounded-lg cursor-pointer hover:border-blue-500 transition-colors"
+                      :class="{'border-blue-500 bg-blue-50': selectedAddress === addr.name}"
+                      @click="selectedAddress = addr.name"
+                  >
+                      <div class="font-medium">{{ addr.address_title }}</div>
+                      <div class="text-gray-600 text-sm mt-1">
+                          {{ addr.address_line1 }}, {{ addr.city }}, {{ addr.pincode }}
+                      </div>
+                      <div class="text-gray-500 text-xs mt-1" v-if="addr.county">County: {{ addr.county }}</div>
+                  </div>
+              </div>
           </div>
-        </div>
-
-        <!-- Step 2: Service Channel -->
-        <div v-else-if="currentStep === 2">
-            <h2 class="text-2xl font-bold mb-6">What best describes you?</h2>
-            <div v-if="channels.loading">Loading...</div>
-            <div v-else class="space-y-4">
-                <div 
-                    v-for="channel in channels.data" 
-                    :key="channel.name" 
-                    class="border p-4 rounded-lg cursor-pointer flex items-start gap-3 hover:border-blue-500 transition-colors"
-                    :class="{'border-blue-500 bg-blue-50': selectedChannel === channel.name}"
-                    @click="selectedChannel = channel.name"
-                >
-                    <div class="mt-1 w-5 h-5 rounded-full border border-gray-400 flex items-center justify-center flex-shrink-0" :class="{'border-blue-600': selectedChannel === channel.name}">
-                        <div v-if="selectedChannel === channel.name" class="w-3 h-3 rounded-full bg-blue-600"></div>
-                    </div>
-                    <div>
-                        <div class="font-medium">{{ channel.channel_name }}</div>
-                        <div class="text-gray-600 text-sm mt-1">{{ channel.channel_description }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-6 flex justify-between">
+          <div class="mt-6 flex justify-between">
                 <Button variant="subtle" @click="currentStep = 1">Back</Button>
-                <Button variant="solid" size="lg" @click="currentStep = 3" :disabled="!selectedChannel">
-                    Next: Address
-                </Button>
-            </div>
-        </div>
-
-        <!-- Step 3: Address -->
-        <div v-else-if="currentStep === 3">
-            <h2 class="text-2xl font-bold mb-6">Select Address</h2>
-            <div v-if="addresses.loading">Loading...</div>
-            <div v-else class="space-y-4">
-                <div 
-                    v-for="addr in addresses.data" 
-                    :key="addr.name" 
-                    class="border p-4 rounded-lg cursor-pointer hover:border-blue-500 transition-colors"
-                    :class="{'border-blue-500 bg-blue-50': selectedAddress === addr.name}"
-                    @click="selectedAddress = addr.name"
-                >
-                    <div class="font-medium">{{ addr.address_title }}</div>
-                    <div class="text-gray-600 text-sm mt-1">
-                        {{ addr.address_line1 }}, {{ addr.city }}, {{ addr.pincode }}
-                    </div>
-                    <div class="text-gray-500 text-xs mt-1" v-if="addr.county">County: {{ addr.county }}</div>
-                </div>
-                <Button icon-left="plus" @click="openAddressDialog">
-                    Add Another Address
-                </Button>
-            </div>
-            <div class="mt-6 flex justify-between">
-                <Button variant="subtle" @click="currentStep = 2">Back</Button>
-                <Button variant="solid" size="lg" @click="handleAddressSelection" :disabled="!selectedAddress" :loading="resolvingTerritory">
+                <Button appearance="primary" size="lg" @click="handleAddressSelection" :disabled="!selectedAddress" :loading="resolvingTerritory">
                     Next: Contact
                 </Button>
             </div>
         </div>
 
-        <!-- Step 4: Contact -->
-        <div v-else-if="currentStep === 4">
+        <!-- Step 3: Contact -->
+        <div v-else-if="currentStep === 3">
             <h2 class="text-2xl font-bold mb-6">Select Contact</h2>
             <div v-if="contacts.loading">Loading...</div>
             <div v-else class="space-y-4">
-                 <div 
-                    v-for="contact in contacts.data" 
-                    :key="contact.name" 
-                    class="border p-4 rounded-lg cursor-pointer hover:border-blue-500 transition-colors"
-                    :class="{'border-blue-500 bg-blue-50': selectedContact === contact.name}"
-                    @click="selectedContact = contact.name"
-                >
-                    <div class="font-medium">{{ contact.first_name }} {{ contact.last_name }}</div>
-                    <div class="text-gray-600 text-sm mt-1">
-                        {{ contact.mobile_no }}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div
+                        v-for="contact in filteredContacts"
+                        :key="contact.name"
+                        class="border p-4 rounded-lg cursor-pointer hover:border-blue-500 transition-colors flex justify-between items-start bg-white shadow-sm"
+                        :class="{'border-blue-500 bg-blue-50': selectedContact === contact.name, 'opacity-75': contact.unsubscribed}"
+                        @click="selectContact(contact, $event)"
+                    >
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="font-medium">{{ contact.first_name }} {{ contact.last_name }}</div>
+                                <span v-if="!contact.unsubscribed" class="px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full">Active</span>
+                                <span v-else class="px-2 py-0.5 text-xs bg-red-100 text-red-800 rounded-full">Disabled</span>
+                            </div>
+                            <div class="text-gray-600 text-sm">
+                                {{ contact.mobile_no }}
+                            </div>
+                            <div class="text-gray-500 text-xs mt-1" v-if="contact.email_id">
+                                {{ contact.email_id }}
+                            </div>
+                        </div>
+                        <div class="dropdown-wrapper">
+                            <CustomDropdown :options="getContactOptions(contact)">
+                                <button class="text-gray-400 hover:text-gray-600 p-1 focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                                </button>
+                            </CustomDropdown>
+                        </div>
+                    </div>
+                    
+                    <!-- Add New Contact Card -->
+                    <div
+                        class="border border-dashed border-gray-300 p-4 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center text-gray-500 min-h-[100px]"
+                        @click="openAddContact"
+                    >
+                        <div class="bg-gray-100 p-2 rounded-full mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </div>
+                        <span class="font-medium">Add New Contact</span>
                     </div>
                 </div>
-                <Button icon-left="plus" @click="showContactDialog = true">
-                    Add New Contact
-                </Button>
             </div>
             <div class="mt-6 flex justify-between">
-                <Button variant="subtle" @click="currentStep = 3">Back</Button>
+                <Button variant="subtle" @click="currentStep = 2">Back</Button>
             </div>
         </div>
 
@@ -152,29 +183,32 @@
 
                 <!-- Address -->
                 <div v-if="selectedAddress">
-                    <div class="text-sm font-semibold text-gray-500 uppercase mt-4">Address</div>
-                    <div class="text-sm">{{ getAddressTitle(selectedAddress) }}</div>
+                    <div class="text-sm font-semibold text-gray-500 uppercase mt-4">Delivery Address</div>
+                    <div class="text-sm font-medium">{{ getAddressTitle(selectedAddress) }}</div>
+                    <div class="text-sm text-gray-600 mt-1">{{ getAddressDetails(selectedAddress) }}</div>
                 </div>
 
                 <!-- Contact -->
                 <div v-if="selectedContact">
                     <div class="text-sm font-semibold text-gray-500 uppercase mt-4">Contact</div>
-                    <div class="text-sm">{{ getContactName(selectedContact) }}</div>
+                    <div class="text-sm font-medium">{{ getContactName(selectedContact) }}</div>
+                    <div class="text-sm text-gray-600 mt-1">{{ getContact(selectedContact)?.mobile_no }}</div>
+                    <div class="text-sm text-gray-600" v-if="getContact(selectedContact)?.email_id">{{ getContact(selectedContact)?.email_id }}</div>
                 </div>
             </div>
 
             <div class="mt-8 pt-4 border-t">
-                <Button 
-                    v-if="canSubmit" 
-                    variant="solid" 
-                    class="w-full" 
-                    size="lg" 
-                    @click="submitOrder" 
+                <Button
+                    v-if="canSubmit"
+                    appearance="primary"
+                    class="w-full"
+                    size="lg"
+                    @click="submitOrder"
                     :loading="createOrder.loading"
                 >
                     Submit Order
                 </Button>
-                <div v-else-if="currentStep === 4 && !selectedContact" class="text-sm text-gray-500 text-center">
+                <div v-else-if="currentStep === 3 && !selectedContact" class="text-sm text-gray-500 text-center">
                     Select a contact to submit
                 </div>
             </div>
@@ -182,49 +216,6 @@
       </div>
     </div>
 
-    <!-- Custom Modal for Address -->
-    <div v-if="showAddressDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4 overflow-hidden">
-            <div class="px-6 py-4 border-b flex justify-between items-center">
-                <h3 class="text-lg font-bold">Add Address</h3>
-                <button @click="showAddressDialog = false" class="text-gray-500 hover:text-gray-700">&times;</button>
-            </div>
-            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                <Input label="Store Name / Individual Name" v-model="addressForm.address_title" />
-                <Input label="Address Line 1" v-model="addressForm.address_line1" />
-                <Input label="Address Line 2 (Optional)" v-model="addressForm.address_line2" />
-                <Input label="City" v-model="addressForm.city" />
-                <Input label="Pincode" v-model="addressForm.pincode" />
-                <Input label="State" v-model="addressForm.state" />
-                <Input label="Country" v-model="addressForm.country" :disabled="true" />
-                <Input label="County" v-model="addressForm.county" :disabled="true" />
-            </div>
-            <div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-2">
-                <Button variant="subtle" @click="showAddressDialog = false">Cancel</Button>
-                <Button variant="solid" @click="createAddress.submit" :loading="createAddress.loading">Save</Button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Custom Modal for Contact -->
-    <div v-if="showContactDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4 overflow-hidden">
-            <div class="px-6 py-4 border-b flex justify-between items-center">
-                <h3 class="text-lg font-bold">Add Contact</h3>
-                <button @click="showContactDialog = false" class="text-gray-500 hover:text-gray-700">&times;</button>
-            </div>
-            <div class="p-6 space-y-4">
-                <Input label="First Name" v-model="contactForm.first_name" />
-                <Input label="Last Name" v-model="contactForm.last_name" />
-                <Input label="Mobile Number" v-model="contactForm.mobile_no" />
-                <Input label="Email" v-model="contactForm.email_id" />
-            </div>
-            <div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-2">
-                <Button variant="subtle" @click="showContactDialog = false">Cancel</Button>
-                <Button variant="solid" @click="createContact.submit" :loading="createContact.loading">Save</Button>
-            </div>
-        </div>
-    </div>
 
     <!-- Custom Modal for Success -->
     <div v-if="showSuccessDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -235,11 +226,55 @@
                 <p class="text-gray-600 mt-2">Thank you for your order.</p>
             </div>
             <div class="px-6 py-4 border-t bg-gray-50 flex justify-center">
-                <Button variant="solid" @click="resetOrder">Place Another Order</Button>
+                <Button appearance="primary" @click="resetOrder">Place Another Order</Button>
             </div>
         </div>
     </div>
 
+    <!-- Address Selection Modal -->
+    <div v-if="showAddressDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl mx-4 overflow-hidden max-h-[80vh] flex flex-col">
+            <div class="px-6 py-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold">Select Delivery Address</h3>
+                <button @click="showAddressDialog = false" class="text-gray-500 hover:text-gray-700">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div
+                        v-for="addr in addresses.data"
+                        :key="addr.name"
+                        class="border p-4 rounded-lg cursor-pointer hover:border-blue-500 transition-colors relative bg-white"
+                        :class="{'ring-2 ring-blue-500': selectedAddress === addr.name, 'bg-blue-50 border-blue-200': addr.custom_is_default}"
+                        @click="selectAddressFromModal(addr.name)"
+                    >
+                        <div class="font-medium">{{ addr.address_title }}</div>
+                        <div class="text-gray-600 text-sm mt-1">
+                            {{ addr.address_line1 }}, {{ addr.city }}, {{ addr.pincode }}
+                        </div>
+                        <div v-if="addr.custom_is_default" class="absolute top-2 right-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">Default</div>
+                    </div>
+                    <div v-if="!addresses.data || addresses.data.length === 0" class="col-span-full text-gray-500 italic p-4 text-center">
+                        No active addresses found.
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-2">
+                <Button variant="subtle" @click="showAddressDialog = false">Cancel</Button>
+            </div>
+        </div>
+    </div>
+
+
+    <Communication
+        v-model:show="showCommunication"
+        :mode="communicationMode"
+        :addressDoc="communicationAddress"
+        :contactDoc="communicationContact"
+        :user="session.data"
+        :isDefaultAddress="isDefaultAddress"
+        :blocking="isBlocking"
+        @success="onCommunicationSuccess"
+    />
   </div>
 </template>
 
@@ -247,8 +282,21 @@
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { Button, Input, createResource, createListResource, LoadingIndicator, frappeRequest } from 'frappe-ui'
 import { useRouter } from 'vue-router'
+import CustomDropdown from '../components/CustomDropdown.vue'
+import Communication from '../components/Communication.vue'
+import { useConsumerValidation } from '../composables/useConsumerValidation'
 
 const router = useRouter()
+const {
+    checkAndPrompt,
+    showCommunication,
+    communicationMode,
+    communicationAddress,
+    communicationContact,
+    isBlocking,
+    isDefaultAddress,
+    userRoles
+} = useConsumerValidation()
 const currentStep = ref(1)
 const cart = reactive({})
 const selectedAddress = ref(null)
@@ -256,13 +304,10 @@ const selectedContact = ref(null)
 const selectedChannel = ref(null)
 const resolvedTerritory = ref(null)
 const resolvingTerritory = ref(false)
+const addressSearch = ref('')
 
 const showAddressDialog = ref(false)
-const showContactDialog = ref(false)
 const showSuccessDialog = ref(false)
-
-const addressForm = reactive({ address_title: '', address_line1: '', address_line2: '', city: '', pincode: '', state: '', country: 'India', county: '' })
-const contactForm = reactive({ first_name: '', last_name: '', mobile_no: '', email_id: '' })
 
 // Resources
 const session = createResource({
@@ -295,8 +340,8 @@ const addresses = createResource({
     makeParams(values) {
         return {
             doctype: 'Address',
-            fields: ['name', 'address_title', 'address_line1', 'city', 'pincode', 'county'],
-            filters: [['Dynamic Link', 'link_name', '=', session.data], ['Dynamic Link', 'link_doctype', '=', 'User']]
+            fields: ['name', 'address_title', 'address_line1', 'city', 'pincode', 'county', 'custom_address_category', 'custom_is_default'],
+            filters: [['Dynamic Link', 'link_name', '=', session.data], ['Dynamic Link', 'link_doctype', '=', 'User'], ['disabled', '=', 0]]
         }
     }
 })
@@ -306,46 +351,19 @@ const contacts = createResource({
     makeParams(values) {
         return {
             doctype: 'Contact',
-            fields: ['name', 'first_name', 'last_name', 'mobile_no'],
+            fields: ['name', 'first_name', 'last_name', 'mobile_no', 'address', 'unsubscribed'],
             filters: [['Dynamic Link', 'link_name', '=', session.data], ['Dynamic Link', 'link_doctype', '=', 'User']]
         }
     }
 })
 
-const createAddress = createResource({
-    url: 'frappe.client.insert',
-    makeParams(values) {
-        return {
-            doc: {
-                doctype: 'Address',
-                ...addressForm,
-                links: [{ link_doctype: 'User', link_name: session.data }]
-            }
-        }
-    },
-    onSuccess(data) {
-        showAddressDialog.value = false
-        addresses.fetch()
-        selectedAddress.value = data.name
+const filteredContacts = computed(() => {
+    if (!contacts.data) return []
+    let list = contacts.data
+    if (selectedAddress.value) {
+        list = list.filter(c => c.address === selectedAddress.value)
     }
-})
-
-const createContact = createResource({
-    url: 'frappe.client.insert',
-    makeParams(values) {
-        return {
-            doc: {
-                doctype: 'Contact',
-                ...contactForm,
-                links: [{ link_doctype: 'User', link_name: session.data }]
-            }
-        }
-    },
-    onSuccess(data) {
-        showContactDialog.value = false
-        contacts.fetch()
-        selectedContact.value = data.name
-    }
+    return list
 })
 
 const createOrder = createResource({
@@ -396,7 +414,47 @@ const canSubmit = computed(() => {
     return hasItemsInCart.value && selectedChannel.value && selectedAddress.value && selectedContact.value
 })
 
+const filteredAddresses = computed(() => {
+    if (!addresses.data) return []
+    if (!addressSearch.value) return addresses.data
+    const q = addressSearch.value.toLowerCase()
+    return addresses.data.filter(a =>
+        (a.address_title && a.address_title.toLowerCase().includes(q)) ||
+        (a.address_line1 && a.address_line1.toLowerCase().includes(q)) ||
+        (a.city && a.city.toLowerCase().includes(q)) ||
+        (a.pincode && a.pincode.toLowerCase().includes(q))
+    )
+})
+
+const isCustomer = computed(() => {
+    if (!userRoles.data) return false
+    const roles = Array.isArray(userRoles.data) ? userRoles.data : (userRoles.data.message || [])
+    return roles.includes('Customer') || roles.includes('Consumer')
+})
+
 // Methods
+function selectAddressFromModal(name) {
+    selectedAddress.value = name
+    showAddressDialog.value = false
+}
+
+function navigateToManage() {
+    if (confirm("it will be navigating outside and all changes will be lost")) {
+        router.push({ name: 'Manage' })
+    }
+}
+
+function selectContact(contact, event) {
+    if (contact.unsubscribed) return
+    if (event && event.target && event.target.closest('.dropdown-wrapper')) return
+    selectedContact.value = contact.name
+}
+
+function isAddressDefault(name) {
+    const addr = addresses.data?.find(a => a.name === name)
+    return addr ? !!addr.custom_is_default : false
+}
+
 function formatCurrency(value) {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value)
 }
@@ -416,16 +474,71 @@ function getAddressTitle(name) {
     return addr ? addr.address_title : name
 }
 
+function getAddressDetails(name) {
+    const addr = addresses.data?.find(a => a.name === name)
+    if (!addr) return ''
+    return `${addr.address_line1}, ${addr.city}, ${addr.pincode}`
+}
+
+
+function getContact(name) {
+    return contacts.data?.find(c => c.name === name)
+}
+
 function getContactName(name) {
     const contact = contacts.data?.find(c => c.name === name)
     return contact ? `${contact.first_name} ${contact.last_name}` : name
 }
 
-function openAddressDialog() {
-    // Pre-fill county from selected channel
-    const channel = channels.data?.find(c => c.name === selectedChannel.value)
-    addressForm.county = channel ? channel.channel_name : ''
-    showAddressDialog.value = true
+function getContactOptions(contact) {
+    const options = []
+    
+    if (!contact.unsubscribed) {
+        options.push({
+            label: 'Edit Contact',
+            onClick: () => openEditContact(contact)
+        })
+    }
+
+    options.push({
+        label: contact.unsubscribed ? 'Enable Contact' : 'Disable Contact',
+        onClick: () => toggleContactSubscription(contact)
+    })
+    
+    return options
+}
+
+function openAddContact() {
+    const addrDoc = addresses.data.find(a => a.name === selectedAddress.value)
+    communicationMode.value = 'Contact'
+    communicationAddress.value = addrDoc
+    communicationContact.value = null
+    isBlocking.value = false
+    showCommunication.value = true
+}
+
+function openEditContact(contact) {
+    communicationMode.value = 'Editable Contact'
+    communicationAddress.value = null
+    communicationContact.value = contact
+    isBlocking.value = false
+    showCommunication.value = true
+}
+
+async function toggleContactSubscription(contact) {
+    const action = contact.unsubscribed ? 'enable' : 'disable'
+    if (confirm(`Are you sure you want to ${action} this contact?`)) {
+        await frappeRequest({
+            url: 'frappe.client.set_value',
+            params: {
+                doctype: 'Contact',
+                name: contact.name,
+                fieldname: 'unsubscribed',
+                value: contact.unsubscribed ? 0 : 1
+            }
+        })
+        contacts.fetch()
+    }
 }
 
 async function handleAddressSelection() {
@@ -435,9 +548,10 @@ async function handleAddressSelection() {
     try {
         const address = addresses.data.find(a => a.name === selectedAddress.value)
         if (address) {
+            selectedChannel.value = address.custom_address_category
             resolvedTerritory.value = await resolveTerritory(address)
         }
-        currentStep.value = 4
+        currentStep.value = 3
     } catch (e) {
         console.error(e)
         alert('Error resolving territory')
@@ -503,13 +617,34 @@ function resetOrder() {
 
 // Watchers
 watch(currentStep, (newStep) => {
-    if (newStep === 3) {
+    if (newStep === 2) {
         addresses.fetch()
     }
-    if (newStep === 4) {
+    if (newStep === 3) {
         contacts.fetch()
     }
 })
 
+watch(() => addresses.data, (val) => {
+    if (val && !selectedAddress.value) {
+        const defaultAddr = val.find(a => a.custom_is_default)
+        if (defaultAddr) selectedAddress.value = defaultAddr.name
+    }
+}, { immediate: true })
+
+onMounted(async () => {
+    await checkAndPrompt()
+})
+
+async function onCommunicationSuccess(data) {
+    if (currentStep.value === 2) addresses.fetch()
+    if (currentStep.value === 3) {
+        await contacts.fetch()
+        if (data && data.contact) {
+            selectedContact.value = data.contact
+        }
+    }
+    await checkAndPrompt()
+}
 </script>
 

@@ -120,6 +120,11 @@ def set_guest_homepage():
         guest_role = frappe.get_doc("Role", "Guest")
         guest_role.save()
 
+@frappe.whitelist()
+def get_user_roles():
+    roles = frappe.get_roles(frappe.session.user)
+    return roles
+
 def reset_guest_homepage():
     """Reset Guest role homepage"""
     if frappe.db.exists("Role", "Guest"):
