@@ -1,0 +1,20 @@
+{
+ "app": "connect_master",
+ "creation": "2026-01-04 22:36:52.799010",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "App",
+ "idx": 0,
+ "label": "Connect Master",
+ "link": "/prism",
+ "link_type": "External",
+ "logo_url": "/assets/connect_master//images/radar-logo.png",
+ "modified": "2026-01-04 22:36:52.799010",
+ "modified_by": "Administrator",
+ "name": "Connect Master",
+ "owner": "Administrator",
+ "restrict_removal": 0,
+ "roles": [],
+ "standard": 1
+}

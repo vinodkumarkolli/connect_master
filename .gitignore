@@ -22,7 +22,7 @@ wheels/
 *.egg
 tags
 MANIFEST
-
+*.lock
 # Environments
 .env
 .venv

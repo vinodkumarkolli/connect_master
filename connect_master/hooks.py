@@ -263,4 +263,4 @@ fixtures = [
     {"dt": "Connect Item"}
 ]
 
-website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}, {'from_route': '/flex/<path:app_path>', 'to_route': 'flex'},]
+website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}, {'from_route': '/prism/<path:app_path>', 'to_route': 'prism'},]
