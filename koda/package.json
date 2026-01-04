@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && yarn copy-html-entry && yarn remove-html-entry",
+    "build": "vite build --base=/assets/connect_master/frontend/ && yarn copy-html-entry && yarn remove-html-entry",
     "preview": "vite preview",
     "copy-html-entry": "cp ../connect_master/public/frontend/index.html ../connect_master/www/koda.html",
     "remove-html-entry": "rm ../connect_master/public/frontend/index.html"
