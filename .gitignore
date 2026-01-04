@@ -22,6 +22,8 @@ wheels/
 *.egg
 tags
 MANIFEST
+connect_master/public/frontend
+connect_master/www/koda.html
 *.lock
 # Environments
 .env
