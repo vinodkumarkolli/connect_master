@@ -55,9 +55,9 @@
                 <div>
                     <div class="font-bold text-gray-900">{{ order.name }}</div>
                     <div class="text-sm text-gray-500">{{ formatDate(order.order_date) }}</div>
-                    <div class="text-sm text-gray-600 mt-1">
+                    <!-- <div class="text-sm text-gray-600 mt-1">
                         <span class="font-medium">Items:</span> {{ orderQuantities[order.name] || 0 }}
-                    </div>
+                    </div> -->
                 </div>
                 <div class="flex items-center gap-3">
                     <span :class="getStatusClass(order.order_status)" class="px-3 py-1 rounded-full text-xs font-medium">
@@ -85,60 +85,59 @@
                 <h3 class="text-lg font-bold">Order Summary: {{ currentSummaryDoc?.name || 'Loading...' }}</h3>
             </div>
             <div class="p-6 overflow-y-auto">
-                <Alert type="warning">
-                    <div v-if="summaryLoading" class="py-4 text-center">Loading...</div>
-                    <div v-else-if="currentSummaryDoc" class="mt-4 space-y-4">
-                        <!-- Items -->
-                        <div>
-                            <h4 class="font-bold text-sm uppercase text-gray-500 mb-2">Items</h4>
-                            <div v-for="item in currentSummaryDoc.items" :key="item.name" class="flex justify-between text-sm py-1 border-b last:border-0">
-                                <span>{{ item.item_name || item.item }} (x{{ item.quantity }})</span>
-                                <span>{{ formatCurrency(item.line_item_amount) }}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Details -->
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Status</h4>
-                                <div class="text-sm">{{ currentSummaryDoc.order_status }}</div>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Date</h4>
-                                <div class="text-sm">{{ formatDate(currentSummaryDoc.order_date) }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Address & Contact -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Delivery Address</h4>
-                                <div v-if="currentSummaryAddress" class="text-sm text-gray-600">
-                                    <div>{{ currentSummaryAddress.address_title }}</div>
-                                    <div>{{ currentSummaryAddress.address_line1 }}</div>
-                                    <div>{{ currentSummaryAddress.city }}, {{ currentSummaryAddress.pincode }}</div>
-                                    <div v-if="currentSummaryAddress.state">{{ currentSummaryAddress.state }}</div>
-                                </div>
-                                <div v-else class="text-sm text-gray-600">{{ currentSummaryDoc.delivery_address }}</div>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Contact</h4>
-                                <div v-if="currentSummaryContact" class="text-sm text-gray-600">
-                                    <div>{{ currentSummaryContact.first_name }} {{ currentSummaryContact.last_name }}</div>
-                                    <div>{{ currentSummaryContact.mobile_no }}</div>
-                                    <div v-if="currentSummaryContact.email_id">{{ currentSummaryContact.email_id }}</div>
-                                </div>
-                                <div v-else class="text-sm text-gray-600">{{ currentSummaryDoc.contact }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Territory -->
-                        <div>
-                            <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Resolved Territory</h4>
-                            <div class="text-sm text-gray-600">{{ currentSummaryDoc.resolved_territory }}</div>
+                <div v-if="summaryLoading" class="py-4 text-center">Loading...</div>
+                <div v-else-if="currentSummaryDoc" class="mt-4 space-y-4">
+                    <!-- Items -->
+                    <div>
+                        <h4 class="font-bold text-sm uppercase text-gray-500 mb-2">Items</h4>
+                        <div v-for="item in currentSummaryDoc.items" :key="item.name" class="flex justify-between text-sm py-1 border-b last:border-0">
+                            <span>{{ item.item_name || item.item }} (x{{ item.quantity }})</span>
+                            <span>{{ formatCurrency(item.line_item_amount) }}</span>
                         </div>
                     </div>
-                </Alert>
+                    
+                    <!-- Details -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Status</h4>
+                            <div class="text-sm">{{ currentSummaryDoc.order_status }}</div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Date</h4>
+                            <div class="text-sm">{{ formatDate(currentSummaryDoc.order_date) }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Address & Contact -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Delivery Address</h4>
+                            <div v-if="currentSummaryAddress" class="text-sm text-gray-600">
+                                <div>{{ currentSummaryAddress.address_title }}</div>
+                                <div>{{ currentSummaryAddress.address_line1 }}</div>
+                                <div>{{ currentSummaryAddress.city }}, {{ currentSummaryAddress.pincode }}</div>
+                                <div v-if="currentSummaryAddress.state">{{ currentSummaryAddress.state }}</div>
+                            </div>
+                            <div v-else class="text-sm text-gray-600">{{ currentSummaryDoc.delivery_address }}</div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Contact</h4>
+                            <div v-if="currentSummaryContact" class="text-sm text-gray-600">
+                                <div>{{ currentSummaryContact.first_name }} {{ currentSummaryContact.last_name }}</div>
+                                <div>{{ currentSummaryContact.mobile_no }}</div>
+                                <div v-if="currentSummaryContact.email_id">{{ currentSummaryContact.email_id }}</div>
+                            </div>
+                            <div v-else class="text-sm text-gray-600">{{ currentSummaryDoc.contact }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Territory -->
+                    <div>
+                        <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Resolved Territory</h4>
+                        <div class="text-sm text-gray-600">{{ currentSummaryDoc.resolved_territory }}</div>
+                    </div>
+                </div>
+            
             </div>
             <div class="px-6 py-4 border-t bg-gray-50 flex justify-end">
                 <Button @click="showSummaryDialog = false">Close</Button>
@@ -149,27 +148,28 @@
     <!-- Timeline Modal -->
     <div v-if="showTimelineDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-lg mx-4 overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="px-6 py-4 border-b">
+                <h3 class="text-lg font-bold">Timeline: {{ currentTrackingOrder?.name || 'Loading...' }}</h3>
+            </div>
             <div class="p-6 overflow-y-auto">
-                <Alert type="warning" :title="`Timeline: ${currentTrackingOrder?.name}`">
-                    <div v-if="timelineLoading" class="py-4 text-center">Loading...</div>
-                    <div v-else-if="timelineEvents.length === 0" class="py-4 text-gray-500 italic">No events found.</div>
-                    <div v-else class="mt-4 space-y-4">
-                        <div v-for="(event, idx) in timelineEvents" :key="idx" class="border-l-2 border-blue-200 pl-4 pb-4 relative last:pb-0">
-                            <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-100 border-2 border-blue-500"></div>
-                            <div class="text-xs text-gray-500">{{ formatDate(event.recorded_time) }}</div>
-                            <div class="font-medium text-gray-900">{{ event.event_type }}</div>
-                            <div class="text-sm text-gray-600 mt-1">
-                                <span v-if="event.event_detail">{{ event.event_detail }}</span>
-                                <span v-else-if="event.event_type === 'Status Update'">
-                                    Changed from {{ event.from_value }} to {{ event.to_value }}
-                                </span>
-                                <span v-else-if="event.event_type === 'Field Change'">
-                                    {{ event.fieldname }} changed
-                                </span>
-                            </div>
+                <div v-if="timelineLoading" class="py-4 text-center">Loading...</div>
+                <div v-else-if="timelineEvents.length === 0" class="py-4 text-gray-500 italic">No events found.</div>
+                <div v-else class="mt-4 space-y-4">
+                    <div v-for="(event, idx) in timelineEvents" :key="idx" class="border-l-2 border-blue-200 pl-4 pb-4 relative last:pb-0">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-100 border-2 border-blue-500"></div>
+                        <div class="text-xs text-gray-500">{{ formatDate(event.recorded_time) }}</div>
+                        <div class="font-medium text-gray-900">{{ event.event_type }}</div>
+                        <div class="text-sm text-gray-600 mt-1">
+                            <span v-if="event.event_detail">{{ event.event_detail }}</span>
+                            <span v-else-if="event.event_type === 'Status Update'">
+                                Changed from {{ event.from_value }} to {{ event.to_value }}
+                            </span>
+                            <span v-else-if="event.event_type === 'Field Change'">
+                                {{ event.fieldname }} changed
+                            </span>
                         </div>
                     </div>
-                </Alert>
+                </div>
             </div>
             <div class="px-6 py-4 border-t bg-gray-50 flex justify-end">
                 <Button @click="showTimelineDialog = false">Close</Button>

@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:partner_name",
+ "creation": "2026-01-05 19:00:23.991482",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "partner_name",
+  "address",
+  "contact",
+  "column_break_rusp",
+  "disabled",
+  "service_channels",
+  "service_territories"
+ ],
+ "fields": [
+  {
+   "fieldname": "partner_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Partner Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "HTML",
+   "label": "Address"
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "HTML",
+   "label": "Contact"
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "column_break_rusp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "service_channels",
+   "fieldtype": "Table MultiSelect",
+   "label": "Service Channels",
+   "options": "Connect Map Service Channel",
+   "reqd": 1
+  },
+  {
+   "fieldname": "service_territories",
+   "fieldtype": "Table MultiSelect",
+   "label": "Service Territories",
+   "options": "Connect Map Service Territory",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-05 20:48:03.087376",
+ "modified_by": "Administrator",
+ "module": "Connect Master",
+ "name": "Connect Channel Partner",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "partner_name"
+}
