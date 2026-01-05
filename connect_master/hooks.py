@@ -261,7 +261,8 @@ fixtures = [
     # Export specific Clients Scripts
     {"dt": "Service Channel"},
     # Export specific DocType records
-    {"dt": "Connect Item"}
+    {"dt": "Connect Item"},
+    {"dt":"Email Template"}
 ]
 
 website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}, {'from_route': '/flex/<path:app_path>', 'to_route': 'flex'},]

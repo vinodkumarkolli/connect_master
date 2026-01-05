@@ -10,7 +10,9 @@
   "use_tls",
   "use_ssl",
   "column_break_tcfm",
-  "port"
+  "port",
+  "username",
+  "password"
  ],
  "fields": [
   {
@@ -46,13 +48,25 @@
    "fieldname": "port",
    "fieldtype": "Data",
    "label": "Port"
+  },
+  {
+   "fieldname": "username",
+   "fieldtype": "Data",
+   "label": "Username",
+   "reqd": 1
+  },
+  {
+   "fieldname": "password",
+   "fieldtype": "Password",
+   "label": "Password",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-01-05 09:32:55.106779",
+ "modified": "2026-01-05 09:57:26.425736",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Email Settings",
