@@ -16,7 +16,7 @@ add_to_apps_screen = [
 		"name": "connect_master",
 		"logo": "/assets/connect_master//images/radar-logo.png",
 		"title": "Connect Master",
-		"route": "/prism",
+		"route": "/flex",
 		#"has_permission": "connect_master.api.permission.has_app_permission"
 	}
 ]
@@ -63,8 +63,9 @@ home_page = "koda"
 # website user home page (by Role)
 role_home_page = {
 	"Customer": "koda",
-    "Partner Admin":"desk",
-    "Territory Admin":"desk"
+    "Partner Admin":"flex",
+    "Territory Admin":"flex",
+    "System Manager":"desk"
 }
 
 # Generators
@@ -263,4 +264,4 @@ fixtures = [
     {"dt": "Connect Item"}
 ]
 
-website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}, {'from_route': '/prism/<path:app_path>', 'to_route': 'prism'},]
+website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}, {'from_route': '/flex/<path:app_path>', 'to_route': 'flex'},]
