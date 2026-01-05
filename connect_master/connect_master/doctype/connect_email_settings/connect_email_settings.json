@@ -11,6 +11,7 @@
   "use_ssl",
   "column_break_tcfm",
   "port",
+  "sender_email",
   "username",
   "password"
  ],
@@ -50,6 +51,12 @@
    "label": "Port"
   },
   {
+   "fieldname": "sender_email",
+   "fieldtype": "Data",
+   "label": "Sender Email",
+   "reqd": 1
+  },
+  {
    "fieldname": "username",
    "fieldtype": "Data",
    "label": "Username",
@@ -66,7 +73,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-01-05 09:57:26.425736",
+ "modified": "2026-01-05 12:25:52.214298",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Email Settings",
@@ -81,6 +88,20 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "All",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Guest",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

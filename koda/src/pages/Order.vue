@@ -226,7 +226,21 @@
                 <p class="text-gray-600 mt-2">Thank you for your order.</p>
             </div>
             <div class="px-6 py-4 border-t bg-gray-50 flex justify-center">
-                <Button appearance="primary" @click="resetOrder">Place Another Order</Button>
+                <Button appearance="primary" @click="$router.push('/')">Navigate to Home</Button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Error -->
+    <div v-if="showErrorDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-sm mx-4 overflow-hidden">
+            <div class="p-6">
+                <Alert type="warning" title="Error">
+                    {{ errorMessage }}
+                </Alert>
+            </div>
+            <div class="px-6 py-4 border-t bg-gray-50 flex justify-end">
+                <Button @click="showErrorDialog = false">Close</Button>
             </div>
         </div>
     </div>
@@ -280,7 +294,7 @@
 
 <script setup>
 import { ref, computed, reactive, watch, onMounted } from 'vue'
-import { Button, Input, createResource, createListResource, LoadingIndicator, frappeRequest } from 'frappe-ui'
+import { Button, Input, createResource, createListResource, LoadingIndicator, frappeRequest, Alert } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import CustomDropdown from '../components/CustomDropdown.vue'
 import Communication from '../components/Communication.vue'
@@ -308,6 +322,13 @@ const addressSearch = ref('')
 
 const showAddressDialog = ref(false)
 const showSuccessDialog = ref(false)
+const showErrorDialog = ref(false)
+const errorMessage = ref('')
+
+function showError(msg) {
+    errorMessage.value = msg
+    showErrorDialog.value = true
+}
 
 // Resources
 const session = createResource({
@@ -382,13 +403,18 @@ const createOrder = createResource({
         return {
             doc: {
                 doctype: 'Connect Order',
-                order_date: new Date().toISOString(),
+                order_date: (() => {
+                    const now = new Date();
+                    const pad = (n) => (n < 10 ? '0' + n : n);
+                    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+                })(),
                 user: session.data,
                 delivery_address: selectedAddress.value,
                 contact: selectedContact.value,
                 resolved_territory: resolvedTerritory.value,
                 service_category: selectedChannel.value,
-                order_status: 'Initiated',
+                order_status: 'Submitted',
+                docstatus: 1,
                 items: lineItems
             }
         }
@@ -397,7 +423,7 @@ const createOrder = createResource({
         showSuccessDialog.value = true
     },
     onError(err) {
-        alert('Order creation failed: ' + (err.messages ? err.messages.join(', ') : err.message))
+        showError('Order creation failed: ' + (err.messages ? err.messages.join(', ') : err.message))
     }
 })
 
@@ -411,7 +437,7 @@ const hasItemsInCart = computed(() => {
 })
 
 const canSubmit = computed(() => {
-    return hasItemsInCart.value && selectedChannel.value && selectedAddress.value && selectedContact.value
+    return hasItemsInCart.value && selectedChannel.value && selectedAddress.value && selectedContact.value && resolvedTerritory.value
 })
 
 const filteredAddresses = computed(() => {
@@ -551,10 +577,16 @@ async function handleAddressSelection() {
             selectedChannel.value = address.custom_address_category
             resolvedTerritory.value = await resolveTerritory(address)
         }
+
+        if (!resolvedTerritory.value) {
+            showError('Service is not available in this area. Please select a different address.')
+            return
+        }
+
         currentStep.value = 3
     } catch (e) {
         console.error(e)
-        alert('Error resolving territory')
+        showError('Error resolving territory')
     } finally {
         resolvingTerritory.value = false
     }
@@ -563,28 +595,49 @@ async function handleAddressSelection() {
 async function resolveTerritory(address) {
     // 1. Pincode
     if (address.pincode) {
+        const pincode = address.pincode.toString().trim()
+        // Try exact match on name first
+        try {
+             let res = await frappeRequest({
+                url: 'frappe.client.get_value',
+                params: {
+                    doctype: 'Service Territory',
+                    fieldname: 'name',
+                    filters: { name: pincode }
+                }
+            })
+            const val = res.message || res
+            if (val && val.name) return val.name
+        } catch (e) {
+            // ignore
+        }
+
+        // Fallback to territory_name search
         let res = await frappeRequest({
             url: 'frappe.client.get_list',
             params: {
                 doctype: 'Service Territory',
-                filters: [['territory_name', '=', address.pincode], ['allow_in_search', '=', 1]],
+                filters: [['territory_name', '=', pincode]],
                 limit_page_length: 1
             }
         })
-        if (res.message && res.message.length > 0) return res.message[0].name
+        const list = res.message || res
+        if (Array.isArray(list) && list.length > 0) return list[0].name
     }
 
     // 2. City
     if (address.city) {
+        const city = address.city.toString().trim()
         let res = await frappeRequest({
             url: 'frappe.client.get_list',
             params: {
                 doctype: 'Service Territory',
-                filters: [['territory_name', '=', address.city], ['allow_in_search', '=', 1]],
+                filters: [['territory_name', '=', city], ['allow_in_search', '=', 1]],
                 limit_page_length: 1
             }
         })
-        if (res.message && res.message.length > 0) return res.message[0].name
+        const list = res.message || res
+        if (Array.isArray(list) && list.length > 0) return list[0].name
     }
 
     // 3. Parent most (Root)
@@ -596,7 +649,8 @@ async function resolveTerritory(address) {
             limit_page_length: 1
         }
     })
-    if (res.message && res.message.length > 0) return res.message[0].name
+    const list = res.message || res
+    if (Array.isArray(list) && list.length > 0) return list[0].name
     
     return null
 }

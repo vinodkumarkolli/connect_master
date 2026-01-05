@@ -11,7 +11,7 @@
           </CustomDropdown>
         </div>
         <div v-else>
-          <a href="/login" class="text-sm font-medium text-gray-700 hover:text-gray-900">Login</a>
+          <a href="/koda/login" class="text-sm font-medium text-gray-700 hover:text-gray-900">Login</a>
         </div>
       </div>
     </header>

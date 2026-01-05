@@ -1,0 +1,92 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-01-05 15:30:49.523197",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "event_type",
+  "recorded_time",
+  "event_detail",
+  "column_break_ubgg",
+  "is_internal",
+  "section_break_nuxe",
+  "fieldname",
+  "from_value",
+  "to_value"
+ ],
+ "fields": [
+  {
+   "fieldname": "event_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Event Type",
+   "options": "Status Update\nComment\nField Change",
+   "reqd": 1
+  },
+  {
+   "fieldname": "recorded_time",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Recorded Time",
+   "reqd": 1
+  },
+  {
+   "fieldname": "event_detail",
+   "fieldtype": "Small Text",
+   "label": "Event Detail"
+  },
+  {
+   "fieldname": "column_break_ubgg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_internal",
+   "fieldtype": "Check",
+   "label": "Is Internal"
+  },
+  {
+   "fieldname": "section_break_nuxe",
+   "fieldtype": "Section Break",
+   "label": "Connect Order Field Change"
+  },
+  {
+   "depends_on": "eval:doc.event_type === 'Feild Change' || doc.event_type === 'Status Update'",
+   "fieldname": "from_value",
+   "fieldtype": "Data",
+   "label": "From Value",
+   "mandatory_depends_on": "eval:doc.event_type === 'Feild Change'"
+  },
+  {
+   "depends_on": "eval:doc.event_type === 'Feild Change' || doc.event_type === 'Status Update'",
+   "fieldname": "to_value",
+   "fieldtype": "Data",
+   "label": "To Value",
+   "mandatory_depends_on": "eval:doc.event_type === 'Feild Change' || doc.event_type === 'Status Update'"
+  },
+  {
+   "depends_on": "eval:doc.event_type === 'Feild Change' || doc.event_type === 'Status Update'",
+   "fieldname": "fieldname",
+   "fieldtype": "Data",
+   "label": "Fieldname",
+   "mandatory_depends_on": "eval:doc.event_type === 'Feild Change' || doc.event_type === 'Status Update'"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-05 16:07:58.966552",
+ "modified_by": "Administrator",
+ "module": "Connect Master",
+ "name": "Connect Order Timeline Event",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

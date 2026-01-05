@@ -11,16 +11,18 @@
   "service_category",
   "resolved_territory",
   "order_status",
+  "user",
   "column_break_ixzz",
   "delivery_address",
   "address_html",
   "contact",
   "contact_html",
-  "user",
   "section_break_ajxs",
   "items",
   "section_break_ikwc",
-  "order_notes"
+  "order_notes",
+  "section_break_qsdw",
+  "timeline"
  ],
  "fields": [
   {
@@ -68,6 +70,7 @@
    "label": "Address HTML"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "resolved_territory",
    "fieldtype": "Link",
    "label": "Resolved Territory",
@@ -75,6 +78,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "service_category",
    "fieldtype": "Link",
    "label": "Service Category",
@@ -113,24 +117,38 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "order_status",
    "fieldtype": "Select",
    "label": "Order Status",
    "options": "Initiated\nAbandoned\nSubmitted\nAssigned\nAccepted\nRejected\nHeld\nCancelled\nFulfilled",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_qsdw",
+   "fieldtype": "Section Break",
+   "label": "Timeline"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "timeline",
+   "fieldtype": "Table",
+   "label": "Timeline",
+   "options": "Connect Order Timeline Event"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-12-28 19:16:56.166802",
+ "modified": "2026-01-05 16:19:42.219468",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Order",
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,

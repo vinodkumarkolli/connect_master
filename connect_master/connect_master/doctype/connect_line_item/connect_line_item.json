@@ -12,7 +12,7 @@
   "line_item_amount"
  ],
  "fields": [
-   {
+  {
    "fieldname": "item",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -51,7 +51,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-12-28 19:03:25.877331",
+ "modified": "2026-01-05 16:46:10.914091",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Line Item",

@@ -22,6 +22,11 @@ const routes = [
     name: 'Restricted',
     component: () => import('@/pages/Restricted.vue'),
   },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/pages/Login.vue'),
+  },
 ]
 
 let router = createRouter({
@@ -37,7 +42,7 @@ router.beforeEach(async (to, from, next) => {
     if (!cachedUser) {
         let res = await frappeRequest({ url: 'frappe.auth.get_logged_user' })
         cachedUser = res.message || res
-        console.log('Fetched User:', cachedUser)
+        // console.log('Fetched User:', cachedUser)
     }
 
     if (to.name === 'Restricted') {
@@ -55,7 +60,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (!cachedRoles) {
-        console.log('Fetching roles for user:', cachedUser)
+        // console.log('Fetching roles for user:', cachedUser)
         let res = await frappeRequest({
             url: 'connect_master.utils.get_user_roles'
         })

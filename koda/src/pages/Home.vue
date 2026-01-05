@@ -45,15 +45,136 @@
       <div class="bg-white p-6 rounded-lg shadow border border-gray-100 min-h-[400px]">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold text-gray-800">Order History</h2>
-            <!-- Filters Placeholder -->
-            <div class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded">Filters</div>
         </div>
         
-        <!-- Order List Placeholder -->
-        <div class="text-center text-gray-500 py-20 border-2 border-dashed border-gray-200 rounded-lg">
+        <div v-if="orders.loading" class="flex justify-center py-12">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+        <div v-else-if="orders.data && orders.data.length > 0" class="space-y-4">
+            <div v-for="order in orders.data" :key="order.name" class="border p-4 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center hover:bg-gray-50 transition-colors gap-4">
+                <div>
+                    <div class="font-bold text-gray-900">{{ order.name }}</div>
+                    <div class="text-sm text-gray-500">{{ formatDate(order.order_date) }}</div>
+                    <div class="text-sm text-gray-600 mt-1">
+                        <span class="font-medium">Items:</span> {{ orderQuantities[order.name] || 0 }}
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span :class="getStatusClass(order.order_status)" class="px-3 py-1 rounded-full text-xs font-medium">
+                        {{ order.order_status }}
+                    </span>
+                    <Button size="sm" @click.stop="viewOrderSummary(order)">
+                        Order Summary
+                    </Button>
+                    <Button size="sm" @click.stop="trackOrder(order)">
+                        Track Order
+                    </Button>
+                </div>
+            </div>
+        </div>
+        <div v-else class="text-center text-gray-500 py-20 border-2 border-dashed border-gray-200 rounded-lg">
             No orders found.
         </div>
       </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div v-if="showSummaryDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-lg mx-4 overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="px-6 py-4 border-b">
+                <h3 class="text-lg font-bold">Order Summary: {{ currentSummaryDoc?.name || 'Loading...' }}</h3>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <Alert type="warning">
+                    <div v-if="summaryLoading" class="py-4 text-center">Loading...</div>
+                    <div v-else-if="currentSummaryDoc" class="mt-4 space-y-4">
+                        <!-- Items -->
+                        <div>
+                            <h4 class="font-bold text-sm uppercase text-gray-500 mb-2">Items</h4>
+                            <div v-for="item in currentSummaryDoc.items" :key="item.name" class="flex justify-between text-sm py-1 border-b last:border-0">
+                                <span>{{ item.item_name || item.item }} (x{{ item.quantity }})</span>
+                                <span>{{ formatCurrency(item.line_item_amount) }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Details -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Status</h4>
+                                <div class="text-sm">{{ currentSummaryDoc.order_status }}</div>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Date</h4>
+                                <div class="text-sm">{{ formatDate(currentSummaryDoc.order_date) }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Address & Contact -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Delivery Address</h4>
+                                <div v-if="currentSummaryAddress" class="text-sm text-gray-600">
+                                    <div>{{ currentSummaryAddress.address_title }}</div>
+                                    <div>{{ currentSummaryAddress.address_line1 }}</div>
+                                    <div>{{ currentSummaryAddress.city }}, {{ currentSummaryAddress.pincode }}</div>
+                                    <div v-if="currentSummaryAddress.state">{{ currentSummaryAddress.state }}</div>
+                                </div>
+                                <div v-else class="text-sm text-gray-600">{{ currentSummaryDoc.delivery_address }}</div>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Contact</h4>
+                                <div v-if="currentSummaryContact" class="text-sm text-gray-600">
+                                    <div>{{ currentSummaryContact.first_name }} {{ currentSummaryContact.last_name }}</div>
+                                    <div>{{ currentSummaryContact.mobile_no }}</div>
+                                    <div v-if="currentSummaryContact.email_id">{{ currentSummaryContact.email_id }}</div>
+                                </div>
+                                <div v-else class="text-sm text-gray-600">{{ currentSummaryDoc.contact }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Territory -->
+                        <div>
+                            <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Resolved Territory</h4>
+                            <div class="text-sm text-gray-600">{{ currentSummaryDoc.resolved_territory }}</div>
+                        </div>
+                    </div>
+                </Alert>
+            </div>
+            <div class="px-6 py-4 border-t bg-gray-50 flex justify-end">
+                <Button @click="showSummaryDialog = false">Close</Button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Modal -->
+    <div v-if="showTimelineDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-lg mx-4 overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="p-6 overflow-y-auto">
+                <Alert type="warning" :title="`Timeline: ${currentTrackingOrder?.name}`">
+                    <div v-if="timelineLoading" class="py-4 text-center">Loading...</div>
+                    <div v-else-if="timelineEvents.length === 0" class="py-4 text-gray-500 italic">No events found.</div>
+                    <div v-else class="mt-4 space-y-4">
+                        <div v-for="(event, idx) in timelineEvents" :key="idx" class="border-l-2 border-blue-200 pl-4 pb-4 relative last:pb-0">
+                            <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-100 border-2 border-blue-500"></div>
+                            <div class="text-xs text-gray-500">{{ formatDate(event.recorded_time) }}</div>
+                            <div class="font-medium text-gray-900">{{ event.event_type }}</div>
+                            <div class="text-sm text-gray-600 mt-1">
+                                <span v-if="event.event_detail">{{ event.event_detail }}</span>
+                                <span v-else-if="event.event_type === 'Status Update'">
+                                    Changed from {{ event.from_value }} to {{ event.to_value }}
+                                </span>
+                                <span v-else-if="event.event_type === 'Field Change'">
+                                    {{ event.fieldname }} changed
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </Alert>
+            </div>
+            <div class="px-6 py-4 border-t bg-gray-50 flex justify-end">
+                <Button @click="showTimelineDialog = false">Close</Button>
+            </div>
+        </div>
     </div>
 
     <Communication
@@ -70,8 +191,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { Button, frappeRequest, createResource } from 'frappe-ui'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { Button, frappeRequest, createResource, createListResource, Alert } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import Communication from '../components/Communication.vue'
 import { useConsumerValidation } from '../composables/useConsumerValidation'
@@ -85,11 +206,6 @@ const {
     isBlocking,
     isDefaultAddress
 } = useConsumerValidation()
-
-const session = reactive({
-    data: null,
-    loading: true
-})
 
 const addresses = createResource({
     url: 'frappe.client.get_list',
@@ -115,21 +231,144 @@ const contacts = createResource({
     auto: false
 })
 
-onMounted(async () => {
+const orders = createResource({
+    url: 'frappe.client.get_list',
+    makeParams(values) {
+        return {
+            doctype: 'Connect Order',
+            fields: ['name', 'order_date', 'order_status'],
+            filters: { user: session.data },
+            order_by: 'order_date desc'
+        }
+    },
+    auto: false
+})
+
+const orderQuantities = reactive({})
+const showTimelineDialog = ref(false)
+const timelineEvents = ref([])
+const timelineLoading = ref(false)
+const currentTrackingOrder = ref(null)
+
+const showSummaryDialog = ref(false)
+const summaryLoading = ref(false)
+const currentSummaryDoc = ref(null)
+const currentSummaryAddress = ref(null)
+const currentSummaryContact = ref(null)
+
+watch(() => orders.data, async (newOrders) => {
+    if (newOrders && newOrders.length > 0) {
+        // Reset
+        Object.keys(orderQuantities).forEach(k => delete orderQuantities[k])
+
+        // Fetch items for each order individually to avoid permission issues with child table
+        await Promise.all(newOrders.map(async (order) => {
+            try {
+                const res = await frappeRequest({
+                    url: 'frappe.client.get_value',
+                    params: {
+                        doctype: 'Connect Order',
+                        filters: { name: order.name },
+                        fieldname: 'items'
+                    }
+                })
+                const val = res.message || res
+                if (val && val.items && Array.isArray(val.items)) {
+                    const total = val.items.reduce((sum, item) => sum + (item.quantity || 0), 0)
+                    orderQuantities[order.name] = total
+                }
+            } catch (e) {
+                console.error('Failed to fetch items for order', order.name, e)
+            }
+        }))
+    }
+})
+
+async function trackOrder(order) {
+    currentTrackingOrder.value = order
+    showTimelineDialog.value = true
+    timelineLoading.value = true
+    timelineEvents.value = []
+    
     try {
-        let res = await frappeRequest({ url: 'frappe.auth.get_logged_user' })
-        if (res) {
-            session.data = res.message || res
-            await addresses.fetch()
-            await contacts.fetch()
-            
-            await checkAndPrompt()
+        // Fetch full order doc to get timeline (avoids permission error on child table)
+        const res = await frappeRequest({
+            url: 'frappe.client.get',
+            params: {
+                doctype: 'Connect Order',
+                name: order.name
+            }
+        })
+        const doc = res.message || res
+        if (doc && doc.timeline) {
+            // Filter and sort timeline
+            let events = doc.timeline.filter(e => !e.is_internal)
+            // Sort by recorded_time desc
+            events.sort((a, b) => new Date(b.recorded_time) - new Date(a.recorded_time))
+            timelineEvents.value = events
         }
     } catch (e) {
-        session.data = null
+        console.error(e)
     } finally {
-        session.loading = false
+        timelineLoading.value = false
     }
+}
+
+async function viewOrderSummary(order) {
+    showSummaryDialog.value = true
+    summaryLoading.value = true
+    currentSummaryDoc.value = null
+    currentSummaryAddress.value = null
+    currentSummaryContact.value = null
+    
+    try {
+        const res = await frappeRequest({
+            url: 'frappe.client.get',
+            params: {
+                doctype: 'Connect Order',
+                name: order.name
+            }
+        })
+        const doc = res.message || res
+        currentSummaryDoc.value = doc
+
+        if (doc.delivery_address) {
+            const addrRes = await frappeRequest({
+                url: 'frappe.client.get',
+                params: { doctype: 'Address', name: doc.delivery_address }
+            })
+            currentSummaryAddress.value = addrRes.message || addrRes
+        }
+
+        if (doc.contact) {
+            const contactRes = await frappeRequest({
+                url: 'frappe.client.get',
+                params: { doctype: 'Contact', name: doc.contact }
+            })
+            currentSummaryContact.value = contactRes.message || contactRes
+        }
+    } catch (e) {
+        console.error(e)
+    } finally {
+        summaryLoading.value = false
+    }
+}
+
+const session = createResource({
+    url: 'frappe.auth.get_logged_user',
+    auto: true,
+    onSuccess(data) {
+        if (data && data !== 'Guest') {
+            addresses.fetch()
+            contacts.fetch()
+            orders.fetch()
+            checkAndPrompt()
+        }
+    }
+})
+
+onMounted(async () => {
+    // Session is auto-fetched
 })
 
 async function onCommunicationSuccess() {
@@ -139,7 +378,7 @@ async function onCommunicationSuccess() {
 }
 
 function startOrdering() {
-    window.location.href = '/login?redirect-to=/koda/order'
+    window.location.href = '/koda/login'
 }
 
 function createOrder() {
@@ -148,6 +387,27 @@ function createOrder() {
 
 function manageAddresses() {
     router.push('/manage')
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function formatCurrency(value) {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value || 0)
+}
+
+function getStatusClass(status) {
+    switch (status) {
+        case 'Submitted': return 'bg-blue-100 text-blue-800'
+        case 'Accepted': return 'bg-green-100 text-green-800'
+        case 'Fulfilled': return 'bg-green-100 text-green-800'
+        case 'Cancelled': return 'bg-red-100 text-red-800'
+        case 'Rejected': return 'bg-red-100 text-red-800'
+        default: return 'bg-gray-100 text-gray-800'
+    }
 }
 
 //function manageContacts() {
