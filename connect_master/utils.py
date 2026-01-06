@@ -27,7 +27,7 @@ def create_roles():
             "doctype": "Role",
             "role_name": "Territory Admin",
             "desk_access": 1,
-            "home_page": "/desk"
+            "home_page": "/koda/dash"
         }).insert()
     
     # Create Partner Admin role (desk access, limited to Radar app)
@@ -36,7 +36,7 @@ def create_roles():
             "doctype": "Role",
             "role_name": "Partner Admin",
             "desk_access": 1,
-            "home_page": "/desk"
+            "home_page": "/koda/dash"
         }).insert()
 
     # Create System Manager role if it doesn't exist (usually it does)

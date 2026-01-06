@@ -27,6 +27,11 @@ const routes = [
     name: 'Login',
     component: () => import('@/pages/Login.vue'),
   },
+  {
+    path: '/dash',
+    name: 'Prism',
+    component: () => import('@/pages/Prism.vue'),
+  },
 ]
 
 let router = createRouter({
@@ -76,6 +81,15 @@ router.beforeEach(async (to, from, next) => {
         // console.log('Fetched Roles:', cachedRoles)
     } else {
         // console.log('Using Cached Roles:', cachedRoles)
+    }
+
+    if (to.name === 'Prism') {
+        if (cachedRoles.includes('Territory Admin') || cachedRoles.includes('Partner Admin')) {
+            next()
+        } else {
+            next({ name: 'Restricted' })
+        }
+        return
     }
 
     if (cachedRoles.includes('Customer')) {
