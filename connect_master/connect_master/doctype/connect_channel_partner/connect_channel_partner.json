@@ -14,7 +14,9 @@
   "disabled",
   "service_channels",
   "service_territories",
-  "excluded_service_territories"
+  "excluded_service_territories",
+  "section_break_edsu",
+  "users"
  ],
  "fields": [
   {
@@ -69,12 +71,22 @@
    "fieldname": "contact_html",
    "fieldtype": "HTML",
    "label": "Contact"
+  },
+  {
+   "fieldname": "section_break_edsu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "users",
+   "fieldtype": "Table MultiSelect",
+   "label": "Users",
+   "options": "Connect Map Users"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-06 12:43:00.161110",
+ "modified": "2026-01-06 22:01:01.848638",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Channel Partner",

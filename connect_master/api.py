@@ -1,4 +1,5 @@
 import frappe
+import json
 import random
 import string
 import smtplib
@@ -45,10 +46,15 @@ def send_otp(email, full_name=None):
     message = template.response.replace("[[otp]]", otp)
 
     if email_settings.settings_type == "Frappe Inbuilt":
+        sender = None
+        if email_settings.email_account:
+            sender = frappe.db.get_value("Email Account", email_settings.email_account, "email_id")
+
         frappe.sendmail(
             recipients=[email],
             subject=subject,
             message=message,
+            sender=sender,
             now=True
         )
         print(f"OTP sent to {email}: {otp}")
@@ -105,3 +111,37 @@ def verify_otp(email, otp):
     login_manager.post_login()
     
     return "Logged in successfully"
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_users_by_role(doctype, txt, searchfield, start, page_len, filters):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+
+    role = filters.get("role")
+    if not role:
+        return []
+
+    return frappe.db.sql("""
+        SELECT DISTINCT
+            u.name, u.full_name
+        FROM
+            `tabUser` u
+        INNER JOIN
+            `tabHas Role` hr ON hr.parent = u.name
+        WHERE
+            hr.role = %(role)s
+            AND u.enabled = 1
+            AND (u.name LIKE %(txt)s OR u.full_name LIKE %(txt)s)
+        ORDER BY
+            case when u.name like %(txt)s then 0 else 1 end,
+            u.name ASC
+        LIMIT
+            %(start)s, %(page_len)s
+    """, {
+        'role': role,
+        'txt': "%%%s%%" % txt,
+        'start': start,
+        'page_len': page_len
+    })
+    return users

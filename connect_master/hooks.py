@@ -63,8 +63,8 @@ home_page = "koda"
 # website user home page (by Role)
 role_home_page = {
 	"Customer": "koda",
-    "Partner Admin":"flex",
-    "Territory Admin":"flex",
+    "Partner Admin":"koda/dash",
+    "Territory Admin":"koda/dash",
     "System Manager":"desk"
 }
 
@@ -268,4 +268,4 @@ fixtures = [
     # {"dt":"Connect Channel Partner"}
 ]
 
-website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}, {'from_route': '/flex/<path:app_path>', 'to_route': 'flex'},]
+website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}]

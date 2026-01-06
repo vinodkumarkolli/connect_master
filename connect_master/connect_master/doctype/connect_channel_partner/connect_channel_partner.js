@@ -7,6 +7,41 @@ frappe.ui.form.on("Connect Channel Partner", {
 			render_address(frm);
 			render_contact(frm);
 		}
+
+		frappe.call({
+			method: "connect_master.api.get_users_by_role",
+			args: {
+				doctype: "User",
+				txt: "",
+				searchfield: "name",
+				start: 0,
+				page_len: 1000,
+				filters: {
+					role: "Partner Admin",
+				},
+			},
+			callback: function (r) {
+				if (r.message) {
+					let users = r.message.map((u) => u[0]);
+					frm.set_query("users", function () {
+						return {
+							filters: {
+								name: ["in", users],
+							},
+						};
+					});
+				}
+			},
+		});
+
+		frm.set_query("service_territories", function () {
+			return {
+				filters: {
+					allow_in_search: 1,
+					disabled:0
+				},
+			};
+		});
 	},
 });
 
