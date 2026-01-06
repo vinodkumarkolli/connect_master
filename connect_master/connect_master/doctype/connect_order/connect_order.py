@@ -11,6 +11,40 @@ class ConnectOrder(Document):
 		pass
 
 @frappe.whitelist()
+def add_timeline_event(order_name, event_type, payload):
+	import json
+	if isinstance(payload, str):
+		payload = json.loads(payload)
+
+	user = frappe.session.user
+	if user == "Guest":
+		frappe.throw("Please login")
+
+	doc = frappe.get_doc("Connect Order", order_name)
+	
+	if doc.user != user and user != "Administrator":
+		frappe.throw("Not authorized")
+
+	event = {
+		"event_type": event_type,
+		"recorded_time": now(),
+		"is_internal": 0,
+		"created_by": user
+	}
+
+	if event_type == "Comment":
+		if isinstance(payload, dict):
+			event["event_detail"] = payload.get("comment") or payload.get("event_detail")
+		else:
+			event["event_detail"] = str(payload)
+	else:
+		if isinstance(payload, dict):
+			event.update(payload)
+
+	doc.append("timeline", event)
+	doc.save(ignore_permissions=True)
+
+@frappe.whitelist()
 def get_channel_partners(territory, channel):
 	if not territory or not channel:
 		return []

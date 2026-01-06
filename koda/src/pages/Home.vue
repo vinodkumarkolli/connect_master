@@ -159,6 +159,9 @@
         <div class="bg-white rounded-lg shadow-lg w-full max-w-lg mx-4 overflow-hidden flex flex-col max-h-[80vh]">
             <div class="px-6 py-4 border-b">
                 <h3 class="text-lg font-bold">Timeline: {{ currentTrackingOrder?.name || 'Loading...' }}</h3>
+                <div v-if="currentTrackingTerritory" class="text-sm text-gray-500 mt-1">
+                    Territory: {{ currentTrackingTerritory }}
+                </div>
             </div>
             <div class="p-6 overflow-y-auto">
                 <div v-if="timelineLoading" class="py-4 text-center">Loading...</div>
@@ -174,14 +177,29 @@
                                 Changed from {{ event.from_value }} to {{ event.to_value }}
                             </span>
                             <span v-else-if="event.event_type === 'Field Change'">
-                                {{ event.fieldname }} changed
+                                <span v-if="event.fieldname === 'channel_partner'">
+                                    Channel Partner assigned is {{ event.to_value }}
+                                </span>
+                                <span v-else>
+                                    {{ event.fieldname }} changed
+                                </span>
                             </span>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="px-6 py-4 border-t bg-gray-50 flex justify-end">
-                <Button @click="showTimelineDialog = false">Close</Button>
+            <div class="px-6 py-4 border-t bg-gray-50">
+                <div v-if="showCommentInput" class="w-full">
+                    <textarea v-model="commentText" class="w-full border rounded p-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Type your comment here..."></textarea>
+                    <div class="flex justify-end gap-2">
+                        <Button @click="showCommentInput = false">Cancel</Button>
+                        <Button :appearance="'primary'" @click="submitComment" :loading="submittingComment">Submit</Button>
+                    </div>
+                </div>
+                <div v-else class="flex justify-end gap-2">
+                    <Button @click="showCommentInput = true">Comment</Button>
+                    <Button @click="showTimelineDialog = false">Close</Button>
+                </div>
             </div>
         </div>
     </div>
@@ -258,12 +276,44 @@ const showTimelineDialog = ref(false)
 const timelineEvents = ref([])
 const timelineLoading = ref(false)
 const currentTrackingOrder = ref(null)
+const currentTrackingTerritory = ref('')
 
 const showSummaryDialog = ref(false)
 const summaryLoading = ref(false)
 const currentSummaryDoc = ref(null)
 const currentSummaryAddress = ref(null)
 const currentSummaryContact = ref(null)
+
+const showCommentInput = ref(false)
+const commentText = ref('')
+const submittingComment = ref(false)
+
+async function submitComment() {
+    if (!commentText.value.trim()) return
+    
+    submittingComment.value = true
+    try {
+        await frappeRequest({
+            url: 'connect_master.connect_master.doctype.connect_order.connect_order.add_timeline_event',
+            params: {
+                order_name: currentTrackingOrder.value.name,
+                event_type: 'Comment',
+                payload: { comment: commentText.value }
+            }
+        })
+        
+        // Refresh timeline
+        await trackOrder(currentTrackingOrder.value)
+        
+        // Reset UI
+        commentText.value = ''
+        showCommentInput.value = false
+    } catch (e) {
+        console.error('Failed to submit comment', e)
+    } finally {
+        submittingComment.value = false
+    }
+}
 
 watch(() => orders.data, async (newOrders) => {
     if (newOrders && newOrders.length > 0) {
@@ -295,9 +345,12 @@ watch(() => orders.data, async (newOrders) => {
 
 async function trackOrder(order) {
     currentTrackingOrder.value = order
+    currentTrackingTerritory.value = ''
     showTimelineDialog.value = true
     timelineLoading.value = true
     timelineEvents.value = []
+    showCommentInput.value = false
+    commentText.value = ''
     
     try {
         // Fetch full order doc to get timeline (avoids permission error on child table)
@@ -309,11 +362,31 @@ async function trackOrder(order) {
             }
         })
         const doc = res.message || res
+
+        if (doc.delivery_address) {
+            try {
+                const addrRes = await frappeRequest({
+                    url: 'frappe.client.get_value',
+                    params: {
+                        doctype: 'Address',
+                        filters: { name: doc.delivery_address },
+                        fieldname: 'custom_resolved_territory'
+                    }
+                })
+                const val = addrRes.message || addrRes
+                if (val && val.custom_resolved_territory) {
+                    currentTrackingTerritory.value = val.custom_resolved_territory
+                }
+            } catch (e) {
+                console.error('Failed to fetch territory', e)
+            }
+        }
+
         if (doc && doc.timeline) {
             // Filter and sort timeline
             let events = doc.timeline.filter(e => !e.is_internal)
-            // Sort by recorded_time desc
-            events.sort((a, b) => new Date(b.recorded_time) - new Date(a.recorded_time))
+            // Sort by idx desc (Newest first)
+            events.sort((a, b) => b.idx - a.idx)
             timelineEvents.value = events
         }
     } catch (e) {

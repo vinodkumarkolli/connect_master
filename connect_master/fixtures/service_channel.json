@@ -1,15 +1,5 @@
 [
  {
-  "channel_description": "Provision Stores, Petty Shops, Nattu Marunthu Kadai, Wholesales, Tea Shops, Newsmart so on",
-  "channel_name": "General Trade",
-  "channel_shorthand": "GT",
-  "disabled": 0,
-  "docstatus": 0,
-  "doctype": "Service Channel",
-  "modified": "2025-12-29 21:36:59.120735",
-  "name": "GT"
- },
- {
   "channel_description": "Supermarkets, Ecommerce Platforms",
   "channel_name": "Modern Trade",
   "channel_shorthand": "MT",
@@ -20,16 +10,6 @@
   "name": "MT"
  },
  {
-  "channel_description": "Pharmacies, Clinics, Hospitals so on",
-  "channel_name": "Pharma",
-  "channel_shorthand": "PHARMA",
-  "disabled": 0,
-  "docstatus": 0,
-  "doctype": "Service Channel",
-  "modified": "2025-12-29 21:38:07.044853",
-  "name": "PHARMA"
- },
- {
   "channel_description": "Individuals who buy for self and personal use",
   "channel_name": "Direct Customer",
   "channel_shorthand": "DIRECT",
@@ -38,5 +18,25 @@
   "doctype": "Service Channel",
   "modified": "2025-12-29 21:38:40.843712",
   "name": "DIRECT"
+ },
+ {
+  "channel_description": "Provision Stores, Petty Shops, Nattu Marunthu Kadai, Wholesales, Tea Shops, Newsmart so on",
+  "channel_name": "General Trade",
+  "channel_shorthand": "GT",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Service Channel",
+  "modified": "2025-12-29 21:36:59.120735",
+  "name": "GT"
+ },
+ {
+  "channel_description": "Pharmacies, Clinics, Hospitals so on",
+  "channel_name": "Pharma",
+  "channel_shorthand": "PHARMA",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Service Channel",
+  "modified": "2025-12-29 21:38:07.044853",
+  "name": "PHARMA"
  }
 ]
