@@ -121,7 +121,11 @@ const addresses = createResource({
 
 const sortedAddresses = computed(() => {
     if (!addresses.data) return []
-    return [...addresses.data].sort((a, b) => (a.disabled || 0) - (b.disabled || 0))
+    return [...addresses.data].sort((a, b) => {
+        if (a.custom_is_default && !b.custom_is_default) return -1
+        if (!a.custom_is_default && b.custom_is_default) return 1
+        return (a.disabled || 0) - (b.disabled || 0)
+    })
 })
 
 const contacts = createResource({

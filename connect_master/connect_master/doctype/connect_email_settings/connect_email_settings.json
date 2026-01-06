@@ -5,6 +5,9 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "settings_type",
+  "column_break_ghgh",
+  "email_account",
   "outgoing_settings_section",
   "outgoing_server",
   "use_tls",
@@ -17,25 +20,30 @@
  ],
  "fields": [
   {
+   "depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "fieldname": "outgoing_settings_section",
    "fieldtype": "Section Break",
    "label": "Outgoing Settings"
   },
   {
+   "depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "fieldname": "outgoing_server",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Outgoing Server",
+   "mandatory_depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "reqd": 1
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "fieldname": "use_tls",
    "fieldtype": "Check",
    "label": "Use TLS"
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "fieldname": "use_ssl",
    "fieldtype": "Check",
    "label": "Use SSL"
@@ -45,35 +53,61 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "description": "If non standard port (e.g. 587)",
    "fieldname": "port",
    "fieldtype": "Data",
    "label": "Port"
   },
   {
+   "depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "fieldname": "sender_email",
    "fieldtype": "Data",
    "label": "Sender Email",
+   "mandatory_depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "reqd": 1
   },
   {
+   "depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "fieldname": "username",
    "fieldtype": "Data",
    "label": "Username",
+   "mandatory_depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "reqd": 1
   },
   {
+   "depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "fieldname": "password",
    "fieldtype": "Password",
    "label": "Password",
+   "mandatory_depends_on": "eval:doc.settings_type === 'Transactional Settings'",
    "reqd": 1
+  },
+  {
+   "fieldname": "settings_type",
+   "fieldtype": "Select",
+   "label": "Settings Type",
+   "options": "Frappe Inbuilt\nTransactional Settings",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ghgh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.settings_type === 'Frappe Inbuilt'",
+   "fieldname": "email_account",
+   "fieldtype": "Link",
+   "label": "Email Account",
+   "mandatory_depends_on": "eval:doc.settings_type === 'Frappe Inbuilt'",
+   "options": "Email Account"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-01-05 12:25:52.214298",
+ "modified": "2026-01-06 15:34:38.582494",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Email Settings",

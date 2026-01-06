@@ -90,9 +90,18 @@
                     <!-- Items -->
                     <div>
                         <h4 class="font-bold text-sm uppercase text-gray-500 mb-2">Items</h4>
-                        <div v-for="item in currentSummaryDoc.items" :key="item.name" class="flex justify-between text-sm py-1 border-b last:border-0">
-                            <span>{{ item.item_name || item.item }} (x{{ item.quantity }})</span>
-                            <span>{{ formatCurrency(item.line_item_amount) }}</span>
+                        <div v-for="item in currentSummaryDoc.items" :key="item.name" class="flex justify-between items-center text-sm py-2 border-b last:border-0">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                                    <img v-if="item.item_image" :src="item.item_image" class="w-full h-full object-cover" />
+                                    <div v-else class="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Img</div>
+                                </div>
+                                <div>
+                                    <div class="font-medium">{{ item.item_name || item.item }}</div>
+                                    <div class="text-gray-500 text-xs">Qty: {{ item.quantity }}</div>
+                                </div>
+                            </div>
+                            <div class="font-medium">{{ formatCurrency(item.line_item_amount) }}</div>
                         </div>
                     </div>
                     
@@ -132,9 +141,9 @@
                     </div>
 
                     <!-- Territory -->
-                    <div>
+                    <div v-if="currentSummaryAddress && currentSummaryAddress.custom_resolved_territory">
                         <h4 class="font-bold text-sm uppercase text-gray-500 mb-1">Resolved Territory</h4>
-                        <div class="text-sm text-gray-600">{{ currentSummaryDoc.resolved_territory }}</div>
+                        <div class="text-sm text-gray-600">{{ currentSummaryAddress.custom_resolved_territory }}</div>
                     </div>
                 </div>
             
@@ -212,7 +221,7 @@ const addresses = createResource({
     makeParams(values) {
         return {
             doctype: 'Address',
-            fields: ['name', 'address_title', 'address_line1', 'city', 'pincode', 'state', 'country', 'county', 'custom_is_default'],
+            fields: ['name', 'address_title', 'address_line1', 'city', 'pincode', 'state', 'country', 'county', 'custom_is_default', 'custom_resolved_territory'],
             filters: [['Dynamic Link', 'link_name', '=', session.data], ['Dynamic Link', 'link_doctype', '=', 'User']]
         }
     },
@@ -330,6 +339,32 @@ async function viewOrderSummary(order) {
             }
         })
         const doc = res.message || res
+
+        if (doc.items && doc.items.length > 0) {
+            const itemNames = doc.items.map(i => i.item)
+            try {
+                const itemsRes = await frappeRequest({
+                    url: 'frappe.client.get_list',
+                    params: {
+                        doctype: 'Connect Item',
+                        filters: [['name', 'in', itemNames]],
+                        fields: ['name', 'item_name', 'item_image']
+                    }
+                })
+                const itemsDetails = itemsRes.message || itemsRes
+                
+                doc.items.forEach(lineItem => {
+                    const detail = itemsDetails.find(d => d.name === lineItem.item)
+                    if (detail) {
+                        lineItem.item_name = detail.item_name
+                        lineItem.item_image = detail.item_image
+                    }
+                })
+            } catch (e) {
+                console.error('Failed to fetch item details', e)
+            }
+        }
+
         currentSummaryDoc.value = doc
 
         if (doc.delivery_address) {

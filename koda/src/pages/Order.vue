@@ -169,9 +169,20 @@
                     <div v-if="!hasItemsInCart" class="text-gray-400 italic text-sm">No items selected</div>
                     <div v-else class="space-y-2 mt-2">
                         <div v-for="(qty, itemName) in cart" :key="itemName" v-show="qty > 0" class="flex justify-between text-sm">
-                            <span class="truncate flex-1 pr-2">{{ getItemName(itemName) }}</span>
-                            <span class="font-medium">x {{ qty }}</span>
+                            <div class="flex-1 pr-2 overflow-hidden">
+                                <div class="truncate">{{ getItemName(itemName) }}</div>
+                                <div class="text-xs text-gray-500">@ {{ formatCurrency(getItemMRP(itemName)) }}</div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <div class="font-medium">x {{ qty }}</div>
+                                <div class="text-xs text-gray-500">{{ formatCurrency(getItemAmount(itemName, qty)) }}</div>
+                            </div>
                         </div>
+                        <div class="border-t pt-2 mt-2 flex justify-between font-bold">
+                            <span>Total</span>
+                            <span>{{ formatCurrency(totalAmount) }}</span>
+                        </div>
+                        <div class="text-xs text-gray-500">(This price is indicative and total is calculated from MRP. Final price may vary based on partner and other factors)</div>
                     </div>
                 </div>
 
@@ -186,6 +197,9 @@
                     <div class="text-sm font-semibold text-gray-500 uppercase mt-4">Delivery Address</div>
                     <div class="text-sm font-medium">{{ getAddressTitle(selectedAddress) }}</div>
                     <div class="text-sm text-gray-600 mt-1">{{ getAddressDetails(selectedAddress) }}</div>
+                    <div class="text-sm text-gray-600 mt-1" v-if="getAddressTerritory(selectedAddress)">
+                        Territory: {{ getAddressTerritory(selectedAddress) }}
+                    </div>
                 </div>
 
                 <!-- Contact -->
@@ -423,7 +437,7 @@ const addresses = createResource({
     makeParams(values) {
         return {
             doctype: 'Address',
-            fields: ['name', 'address_title', 'address_line1', 'city', 'pincode', 'county', 'custom_address_category', 'custom_is_default'],
+            fields: ['name', 'address_title', 'address_line1', 'city', 'pincode', 'county', 'custom_address_category', 'custom_is_default', 'custom_resolved_territory'],
             filters: [['Dynamic Link', 'link_name', '=', session.data], ['Dynamic Link', 'link_doctype', '=', 'User'], ['disabled', '=', 0]]
         }
     }
@@ -474,7 +488,6 @@ const createOrder = createResource({
             user: session.data,
             delivery_address: selectedAddress.value,
             contact: selectedContact.value,
-            resolved_territory: resolvedTerritory.value,
             service_category: selectedChannel.value,
             order_status: (selectedChannelPartner.value && selectedChannelPartner.value !== 'custom') ? 'Assigned' : 'Submitted',
             channel_partner: (selectedChannelPartner.value && selectedChannelPartner.value !== 'custom') ? selectedChannelPartner.value : undefined,
@@ -534,12 +547,20 @@ const totalItems = computed(() => {
     return Object.values(cart).reduce((sum, qty) => sum + (qty || 0), 0)
 })
 
+const totalAmount = computed(() => {
+    return Object.entries(cart).reduce((sum, [itemName, qty]) => {
+        if (!qty) return sum
+        const item = items.data?.find(i => i.name === itemName)
+        return sum + ((item?.item_mrp || 0) * qty)
+    }, 0)
+})
+
 const hasItemsInCart = computed(() => {
     return totalItems.value > 0
 })
 
 const canSubmit = computed(() => {
-    return hasItemsInCart.value && selectedChannel.value && selectedAddress.value && selectedContact.value && resolvedTerritory.value
+    return currentStep.value === 3 && hasItemsInCart.value && selectedChannel.value && selectedAddress.value && selectedContact.value && resolvedTerritory.value
 })
 
 const filteredAddresses = computed(() => {
@@ -592,6 +613,16 @@ function getItemName(name) {
     return item ? item.item_name : name
 }
 
+function getItemMRP(name) {
+    const item = items.data?.find(i => i.name === name)
+    return item ? item.item_mrp : 0
+}
+
+function getItemAmount(itemName, qty) {
+    const item = items.data?.find(i => i.name === itemName)
+    return (item?.item_mrp || 0) * qty
+}
+
 function getChannelName(name) {
     const channel = channels.data?.find(c => c.name === name)
     return channel ? channel.channel_name : name
@@ -606,6 +637,11 @@ function getAddressDetails(name) {
     const addr = addresses.data?.find(a => a.name === name)
     if (!addr) return ''
     return `${addr.address_line1}, ${addr.city}, ${addr.pincode}`
+}
+
+function getAddressTerritory(name) {
+    const addr = addresses.data?.find(a => a.name === name)
+    return addr ? addr.custom_resolved_territory : ''
 }
 
 
@@ -677,7 +713,10 @@ async function handleAddressSelection() {
         const address = addresses.data.find(a => a.name === selectedAddress.value)
         if (address) {
             selectedChannel.value = address.custom_address_category
-            resolvedTerritory.value = await resolveTerritory(address)
+            resolvedTerritory.value = address.custom_resolved_territory
+            if (!resolvedTerritory.value) {
+                resolvedTerritory.value = await resolveTerritory(address)
+            }
         }
 
         if (!resolvedTerritory.value) {

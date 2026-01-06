@@ -114,7 +114,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
-import { Button, Input, Autocomplete, createResource, createListResource } from 'frappe-ui'
+import { Button, Input, Autocomplete, createResource, createListResource, frappeRequest } from 'frappe-ui'
 
 const props = defineProps({
     show: Boolean,
@@ -159,7 +159,8 @@ const addressForm = reactive({
     state: '',
     country: 'India',
     custom_address_category: '',
-    address_type: 'Current'
+    address_type: 'Current',
+    custom_resolved_territory: ''
 })
 
 const contactForm = reactive({
@@ -402,7 +403,6 @@ const createContact = createResource({
                 doctype: 'Contact',
                 first_name: contactForm.first_name,
                 last_name: contactForm.last_name,
-                email_id: contactForm.email_id,
                 email_ids: getUpdatedEmailIds(),
                 phone_nos: getUpdatedPhoneNos(),
                 is_primary: 1,
@@ -426,7 +426,6 @@ const updateContact = createResource({
             fieldname: {
                 first_name: contactForm.first_name,
                 last_name: contactForm.last_name,
-                email_id: contactForm.email_id,
                 email_ids: getUpdatedEmailIds(),
                 phone_nos: getUpdatedPhoneNos()
             }
@@ -438,10 +437,75 @@ const updateContact = createResource({
     }
 })
 
+async function resolveTerritory(address) {
+    // 1. Pincode
+    if (address.pincode) {
+        const pincode = address.pincode.toString().trim()
+        // Try exact match on name first
+        try {
+             let res = await frappeRequest({
+                url: 'frappe.client.get_value',
+                params: {
+                    doctype: 'Service Territory',
+                    fieldname: 'name',
+                    filters: { name: pincode }
+                }
+            })
+            const val = res.message || res
+            if (val && val.name) return val.name
+        } catch (e) {
+            // ignore
+        }
+
+        // Fallback to territory_name search
+        let res = await frappeRequest({
+            url: 'frappe.client.get_list',
+            params: {
+                doctype: 'Service Territory',
+                filters: [['territory_name', '=', pincode]],
+                limit_page_length: 1
+            }
+        })
+        const list = res.message || res
+        if (Array.isArray(list) && list.length > 0) return list[0].name
+    }
+
+    // 2. City
+    if (address.city) {
+        const city = address.city.toString().trim()
+        let res = await frappeRequest({
+            url: 'frappe.client.get_list',
+            params: {
+                doctype: 'Service Territory',
+                filters: [['territory_name', '=', city], ['allow_in_search', '=', 1]],
+                limit_page_length: 1
+            }
+        })
+        const list = res.message || res
+        if (Array.isArray(list) && list.length > 0) return list[0].name
+    }
+
+    // 3. Parent most (Root)
+    let res = await frappeRequest({
+        url: 'frappe.client.get_list',
+        params: {
+            doctype: 'Service Territory',
+            filters: [['parent_service_territory', '=', '']],
+            limit_page_length: 1
+        }
+    })
+    const list = res.message || res
+    if (Array.isArray(list) && list.length > 0) return list[0].name
+    
+    return null
+}
+
 async function submit() {
     loading.value = true
     try {
         if (step.value === 'address') {
+            addressForm.custom_resolved_territory = await resolveTerritory(addressForm)
+
             if (props.mode.includes('Editable') && props.addressDoc) {
                 await updateAddress.submit()
             } else {

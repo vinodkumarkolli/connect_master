@@ -33,9 +33,7 @@ def send_otp(email, full_name=None):
     
     # Get Email Settings
     email_settings = frappe.get_single("Connect Email Settings")
-    if not email_settings.outgoing_server:
-        frappe.throw("Email settings not configured")
-        
+
     # Get Email Template
     try:
         template = frappe.get_doc("Email Template", "Login Template")
@@ -43,32 +41,44 @@ def send_otp(email, full_name=None):
         frappe.throw("Login Template not found")
         
     # Prepare Email
-    subject = template.subject.replace("[[OTP]]", otp)
-    message = template.response.replace("[[OTP]]", otp)
-    
-    msg = MIMEMultipart()
-    msg['From'] = email_settings.username
-    msg['To'] = email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(message, 'html'))
-    
-    # Send Email
-    try:
-        port = int(email_settings.port) if email_settings.port else 587
-        if email_settings.use_ssl:
-            server = smtplib.SMTP_SSL(email_settings.outgoing_server, port)
-        else:
-            server = smtplib.SMTP(email_settings.outgoing_server, port)
-            if email_settings.use_tls:
-                server.starttls()
-        
-        server.login(email_settings.username, email_settings.get_password('password'))
-        # server.sendmail(email_settings.username, email, msg.as_string())
-        # server.quit()
+    subject = template.subject.replace("[[otp]]", otp)
+    message = template.response.replace("[[otp]]", otp)
+
+    if email_settings.settings_type == "Frappe Inbuilt":
+        frappe.sendmail(
+            recipients=[email],
+            subject=subject,
+            message=message,
+            now=True
+        )
         print(f"OTP sent to {email}: {otp}")
-    except Exception as e:
-        frappe.log_error(f"Failed to send OTP email: {str(e)}")
-        frappe.throw("Failed to send OTP email. Please try again later.")
+    else:
+        if not email_settings.outgoing_server:
+            frappe.throw("Email settings not configured")
+        
+        msg = MIMEMultipart()
+        msg['From'] = email_settings.username
+        msg['To'] = email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(message, 'html'))
+        
+        # Send Email
+        try:
+            port = int(email_settings.port) if email_settings.port else 587
+            if email_settings.use_ssl:
+                server = smtplib.SMTP_SSL(email_settings.outgoing_server, port)
+            else:
+                server = smtplib.SMTP(email_settings.outgoing_server, port)
+                if email_settings.use_tls:
+                    server.starttls()
+            
+            server.login(email_settings.username, email_settings.get_password('password'))
+            # server.sendmail(email_settings.username, email, msg.as_string())
+            # server.quit()
+            print(f"OTP sent to {email}: {otp}")
+        except Exception as e:
+            frappe.log_error(f"Failed to send OTP email: {str(e)}")
+            frappe.throw("Failed to send OTP email. Please try again later.")
         
     return "OTP sent successfully"
 
