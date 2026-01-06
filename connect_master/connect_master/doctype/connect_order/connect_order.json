@@ -1,6 +1,6 @@
 {
  "actions": [],
- "allow_rename": 1,
+ "autoname": "hash",
  "creation": "2025-12-28 19:07:37.601522",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -12,6 +12,7 @@
   "resolved_territory",
   "order_status",
   "user",
+  "channel_partner",
   "column_break_ixzz",
   "delivery_address",
   "address_html",
@@ -135,16 +136,24 @@
    "fieldtype": "Table",
    "label": "Timeline",
    "options": "Connect Order Timeline Event"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "channel_partner",
+   "fieldtype": "Link",
+   "label": "Channel Partner",
+   "options": "Connect Channel Partner"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-05 16:19:42.219468",
+ "modified": "2026-01-06 08:58:36.912990",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Order",
+ "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {

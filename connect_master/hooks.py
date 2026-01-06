@@ -262,7 +262,8 @@ fixtures = [
     {"dt": "Service Channel"},
     # Export specific DocType records
     {"dt": "Connect Item"},
-    {"dt":"Email Template"}
+    {"dt":"Email Template"},
+    # {"dt":"Connect Channel Partner"}
 ]
 
 website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}, {'from_route': '/flex/<path:app_path>', 'to_route': 'flex'},]

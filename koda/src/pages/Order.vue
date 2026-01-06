@@ -245,6 +245,64 @@
         </div>
     </div>
 
+    <!-- Channel Partner Selection Modal -->
+    <div v-if="showChannelPartnerDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4 overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="px-6 py-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold">Select Channel Partner</h3>
+                <button @click="showChannelPartnerDialog = false" class="text-gray-500 hover:text-gray-700">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <div v-if="channelPartners.loading" class="flex justify-center">
+                    <LoadingIndicator />
+                </div>
+                <div v-else class="space-y-2">
+                    <template v-if="channelPartners.data && channelPartners.data.length > 0">
+                        <div
+                            v-for="partner in channelPartners.data"
+                            :key="partner.name"
+                            class="border p-4 rounded-lg cursor-pointer hover:border-blue-500 transition-colors"
+                            :class="{'ring-2 ring-blue-500 bg-blue-50': selectedChannelPartner === partner.name}"
+                            @click="selectedChannelPartner = partner.name"
+                        >
+                            <div class="font-medium">{{ partner.partner_name }}</div>
+                            <div class="text-gray-600 text-sm mt-1" v-if="partner.description">{{ partner.description }}</div>
+                            <div class="text-gray-500 text-xs mt-2" v-if="partner.address_html" v-html="partner.address_html"></div>
+                            <div class="text-gray-500 text-xs mt-1" v-if="partner.contact_html" v-html="partner.contact_html"></div>
+                        </div>
+                    </template>
+                    <div v-else class="text-center text-gray-500 mb-4">
+                        No Channel Partners found for this area.
+                    </div>
+
+                    <div
+                        class="border p-4 rounded-lg cursor-pointer hover:border-blue-500 transition-colors"
+                        :class="{'ring-2 ring-blue-500 bg-blue-50': selectedChannelPartner === 'custom'}"
+                        @click="selectedChannelPartner = 'custom'"
+                    >
+                        <div class="font-medium">Couldn't find the Partner I am looking</div>
+                        <div class="text-gray-600 text-sm mt-1">Be assured. We will find a Channel Partner as soon as possible</div>
+                        
+                        <div v-if="selectedChannelPartner === 'custom'" class="mt-3" @click.stop>
+                            <textarea
+                                v-model="customPartnerDescription"
+                                rows="2"
+                                class="w-full border rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                placeholder="Please describe the partner you are looking for..."
+                            ></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-2">
+                <Button variant="subtle" @click="showChannelPartnerDialog = false">Cancel</Button>
+                <Button appearance="primary" :disabled="!selectedChannelPartner" @click="confirmOrder" :loading="createOrder.loading">
+                    Confirm & Submit
+                </Button>
+            </div>
+        </div>
+    </div>
+
     <!-- Address Selection Modal -->
     <div v-if="showAddressDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl mx-4 overflow-hidden max-h-[80vh] flex flex-col">
@@ -321,6 +379,10 @@ const resolvingTerritory = ref(false)
 const addressSearch = ref('')
 
 const showAddressDialog = ref(false)
+const showChannelPartnerDialog = ref(false)
+const channelPartners = reactive({ data: [], loading: false })
+const selectedChannelPartner = ref(null)
+const customPartnerDescription = ref('')
 const showSuccessDialog = ref(false)
 const showErrorDialog = ref(false)
 const errorMessage = ref('')
@@ -400,26 +462,66 @@ const createOrder = createResource({
             }
         })
 
-        return {
-            doc: {
-                doctype: 'Connect Order',
-                order_date: (() => {
-                    const now = new Date();
-                    const pad = (n) => (n < 10 ? '0' + n : n);
-                    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-                })(),
-                user: session.data,
-                delivery_address: selectedAddress.value,
-                contact: selectedContact.value,
-                resolved_territory: resolvedTerritory.value,
-                service_category: selectedChannel.value,
-                order_status: 'Submitted',
-                docstatus: 1,
-                items: lineItems
-            }
+        const nowStr = (() => {
+            const now = new Date();
+            const pad = (n) => (n < 10 ? '0' + n : n);
+            return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        })();
+
+        const doc = {
+            doctype: 'Connect Order',
+            order_date: nowStr,
+            user: session.data,
+            delivery_address: selectedAddress.value,
+            contact: selectedContact.value,
+            resolved_territory: resolvedTerritory.value,
+            service_category: selectedChannel.value,
+            order_status: (selectedChannelPartner.value && selectedChannelPartner.value !== 'custom') ? 'Assigned' : 'Submitted',
+            channel_partner: (selectedChannelPartner.value && selectedChannelPartner.value !== 'custom') ? selectedChannelPartner.value : undefined,
+            order_notes: selectedChannelPartner.value === 'custom' ? customPartnerDescription.value : undefined,
+            docstatus: 1,
+            items: lineItems
         }
+
+        if (selectedChannelPartner.value && selectedChannelPartner.value !== 'custom') {
+            doc.timeline = [
+                {
+                    event_type: "Status Update",
+                    recorded_time: nowStr,
+                    is_internal: 0,
+                    fieldname: "order_status",
+                    from_value: "Submitted",
+                    to_value: "Assigned",
+                    created_by: session.data
+                },
+                {
+                    event_type: "Field Change",
+                    recorded_time: nowStr,
+                    is_internal: 0,
+                    fieldname: "channel_partner",
+                    from_value: '',
+                    to_value: selectedChannelPartner.value,
+                    created_by: session.data
+                }
+            ]
+        }
+        if(selectedChannelPartner.value === 'custom'){
+            doc.timeline = [
+                {
+                    event_type: "Status Update",
+                    recorded_time: nowStr,
+                    is_internal: 0,
+                    fieldname: "order_status",
+                    from_value: "Initiated",
+                    to_value: "Submitted",
+                    created_by: session.data
+                }
+            ]
+        }
+        return { doc }
     },
     onSuccess(data) {
+        showChannelPartnerDialog.value = false
         showSuccessDialog.value = true
     },
     onError(err) {
@@ -656,7 +758,34 @@ async function resolveTerritory(address) {
 }
 
 function submitOrder() {
+    fetchChannelPartners()
+}
+
+function confirmOrder() {
     createOrder.submit()
+}
+
+async function fetchChannelPartners() {
+    channelPartners.loading = true
+    channelPartners.data = []
+    selectedChannelPartner.value = null
+    customPartnerDescription.value = ''
+    try {
+        const res = await frappeRequest({
+            url: 'connect_master.connect_master.doctype.connect_order.connect_order.get_channel_partners',
+            params: {
+                territory: resolvedTerritory.value,
+                channel: selectedChannel.value
+            }
+        })
+        channelPartners.data = res.message || res
+        showChannelPartnerDialog.value = true
+    } catch (e) {
+        console.error(e)
+        showError('Failed to fetch Channel Partners')
+    } finally {
+        channelPartners.loading = false
+    }
 }
 
 function resetOrder() {
@@ -667,6 +796,8 @@ function resetOrder() {
     selectedContact.value = null
     selectedChannel.value = null
     resolvedTerritory.value = null
+    selectedChannelPartner.value = null
+    customPartnerDescription.value = ''
 }
 
 // Watchers
