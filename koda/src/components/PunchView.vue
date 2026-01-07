@@ -334,6 +334,11 @@ import { ref, reactive, computed } from 'vue'
 import { Button, Input, createResource, createListResource, frappeRequest, LoadingIndicator } from 'frappe-ui'
 import Communication from './Communication.vue'
 
+const session = createResource({
+    url: 'frappe.auth.get_logged_user',
+    auto: true
+})
+
 const punchSearch = ref('')
 const punchStep = ref(1)
 const punchSearchResults = ref([])
@@ -586,7 +591,7 @@ const createOrder = createResource({
         const doc = {
             doctype: 'Connect Order',
             order_date: nowStr,
-            user: punchTarget.value.user,
+            user: session.data,
             delivery_address: address,
             contact: contact,
             service_category: service_category,
@@ -606,7 +611,7 @@ const createOrder = createResource({
                     fieldname: "order_status",
                     from_value: "Submitted",
                     to_value: "Assigned",
-                    created_by: punchTarget.value.user // Or session user? Usually session user but here we might be admin. Let's use session user if available or punchTarget user.
+                    created_by: session.data
                 },
                 {
                     event_type: "Field Change",
@@ -615,7 +620,7 @@ const createOrder = createResource({
                     fieldname: "channel_partner",
                     from_value: '',
                     to_value: selectedChannelPartner.value,
-                    created_by: punchTarget.value.user
+                    created_by: session.data
                 }
             ]
         }
@@ -628,7 +633,7 @@ const createOrder = createResource({
                     fieldname: "order_status",
                     from_value: "Initiated",
                     to_value: "Submitted",
-                    created_by: punchTarget.value.user
+                    created_by: session.data
                 }
             ]
         }

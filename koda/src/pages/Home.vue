@@ -63,6 +63,9 @@
                     <span :class="getStatusClass(order.order_status)" class="px-3 py-1 rounded-full text-xs font-medium">
                         {{ order.order_status }}
                     </span>
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        {{ order.user }}
+                    </span>
                     <Button size="sm" @click.stop="viewOrderSummary(order)">
                         Order Summary
                     </Button>
@@ -261,10 +264,13 @@ const contacts = createResource({
 const orders = createResource({
     url: 'frappe.client.get_list',
     makeParams(values) {
+        const addressNames = addresses.data?.map(a => a.name) || []
         return {
             doctype: 'Connect Order',
-            fields: ['name', 'order_date', 'order_status'],
-            filters: { user: session.data },
+            fields: ['name', 'order_date', 'order_status', 'user'],
+            filters: {
+                delivery_address: ['in', addressNames.length ? addressNames : ['']]
+            },
             order_by: 'order_date desc'
         }
     },
@@ -465,9 +471,9 @@ async function viewOrderSummary(order) {
 const session = createResource({
     url: 'frappe.auth.get_logged_user',
     auto: true,
-    onSuccess(data) {
+    async onSuccess(data) {
         if (data && data !== 'Guest') {
-            addresses.fetch()
+            await addresses.fetch()
             contacts.fetch()
             orders.fetch()
             checkAndPrompt()

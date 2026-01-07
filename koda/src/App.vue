@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col min-h-screen">
-    <header class="flex items-center justify-between px-6 py-4 border-b bg-white">
+    <header class="flex items-center justify-between px-6 py-4 border-b bg-white relative z-50">
       <div class="text-xl font-bold cursor-pointer" @click="router.push('/')">Koda</div>
       <div>
         <div v-if="session.data && session.data !== 'Guest'" class="flex items-center gap-2">
@@ -15,7 +15,7 @@
         </div>
       </div>
     </header>
-    <main class="flex-1">
+    <main class="flex-1 flex flex-col">
       <router-view />
     </main>
   </div>

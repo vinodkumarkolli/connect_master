@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen bg-gray-50 flex flex-col overflow-hidden">
+  <div class="flex-1 w-full bg-gray-50 flex flex-col overflow-hidden">
     
     <!-- Header (Visible when a view is active) -->
     <div v-if="currentView" class="bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm z-10 flex-shrink-0">

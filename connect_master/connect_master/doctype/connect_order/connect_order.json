@@ -113,7 +113,7 @@
    "fieldname": "order_status",
    "fieldtype": "Select",
    "label": "Order Status",
-   "options": "Initiated\nAbandoned\nSubmitted\nAssigned\nAccepted\nRejected\nHeld\nCancelled\nFulfilled",
+   "options": "Submitted\nAssigned\nAccepted\nRejected\nHeld\nCancelled\nFulfilled",
    "reqd": 1
   },
   {
@@ -140,7 +140,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-06 16:53:05.924500",
+ "modified": "2026-01-07 17:59:40.344213",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Order",
