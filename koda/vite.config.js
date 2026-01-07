@@ -23,5 +23,8 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['frappe-ui > feather-icons', 'showdown', 'engine.io-client'],
+    esbuildOptions: {
+      sourcemap: 'inline',
+    },
   },
 })

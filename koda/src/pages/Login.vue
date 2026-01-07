@@ -4,7 +4,7 @@
       <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">Sign in to your account</h2>
     </div>
 
-    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+    <div class="mt-5 sm:mx-auto sm:w-full sm:max-w-sm">
       <Card class="p-6">
         <div class="space-y-6">
           <div v-if="step === 'email'">

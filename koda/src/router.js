@@ -56,7 +56,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (cachedUser === 'Guest') {
-        if (to.name === 'Home') {
+        if (to.name === 'Home' || to.name === 'Login') {
             next()
         } else {
             next({ name: 'Home' })
@@ -92,15 +92,21 @@ router.beforeEach(async (to, from, next) => {
         return
     }
 
+    if (cachedRoles.includes('Territory Admin') || cachedRoles.includes('Partner Admin')) {
+        if (to.name === 'Home') {
+            next({ name: 'Prism' })
+            return
+        }
+        next()
+        return
+    }
+
     if (cachedRoles.includes('Customer')) {
-        console.log('Access Granted')
         next()
     } else {
-        console.log('Access Denied. Redirecting to Restricted.')
         next({ name: 'Restricted' })
     }
   } catch (e) {
-    console.error('Auth check failed', e)
     next()
   }
 })
