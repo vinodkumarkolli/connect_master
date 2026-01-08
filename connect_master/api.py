@@ -963,3 +963,38 @@ def mark_order_delivered(order_name, delivery_date, delivery_notes):
         
     order.save(ignore_permissions=True)
     return "Order Marked as Delivered"
+
+@frappe.whitelist()
+def accept_order(order_name, notes):
+    if not order_name:
+        frappe.throw("Order Name is required")
+        
+    order = frappe.get_doc("Connect Order", order_name)
+    
+    # Update Status
+    old_status = order.order_status
+    if old_status != "Accepted":
+        order.order_status = "Accepted"
+        
+        # Timeline: Status Update
+        order.append("timeline", {
+            "event_type": "Status Update",
+            "fieldname": "order_status",
+            "from_value": old_status,
+            "to_value": "Accepted",
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+    
+    # Timeline: Notes
+    if notes:
+        order.append("timeline", {
+            "event_type": "Comment",
+            "event_detail": notes,
+            "is_internal": 0,
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+        
+    order.save(ignore_permissions=True)
+    return "Order Accepted Successfully"

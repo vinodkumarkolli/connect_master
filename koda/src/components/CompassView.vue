@@ -385,7 +385,22 @@
                                 </div>
                                 <div class="flex justify-end gap-2 pt-2 border-t">
                                     <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
-                                    <Button variant="solid" size="sm" @click="submitDelivery" :loading="submittingDelivery">Submit</Button>
+                                    <Button variant="solid" size="sm" @click="submitDelivery" :loading="submittingDelivery" :disabled="!deliveryDate || !deliveryNotes">Submit</Button>
+                                </div>
+                            </div>
+                            <div v-else-if="currentAction === 'Accept Order'" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Notes</label>
+                                    <textarea
+                                        v-model="acceptanceNotes"
+                                        class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                        rows="3"
+                                        placeholder="Enter acceptance notes..."
+                                    ></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2 pt-2 border-t">
+                                    <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                    <Button variant="solid" size="sm" @click="submitAcceptance" :loading="acceptingOrder" :disabled="!acceptanceNotes">Accept Order</Button>
                                 </div>
                             </div>
                             <div v-else>
@@ -635,16 +650,39 @@ const menuActions = computed(() => {
     if (activeOrder.value) {
         if (activeOrder.value.order_status === 'Submitted') {
             actions = ['Select Channel Partner']
-        } else if (isTerritoryAdmin.value &&
-                   ['Assigned', 'Accepted', 'Rejected', 'Held'].includes(activeOrder.value.order_status) &&
-                   activeOrder.value.channel_partner) {
-            actions.push('Change Channel Partner')
+        } else {
+            if (activeOrder.value.order_status === 'Assigned') {
+                actions = []
+            }
+
+            if (isTerritoryAdmin.value &&
+                    ['Assigned', 'Accepted', 'Rejected', 'Held'].includes(activeOrder.value.order_status) &&
+                    activeOrder.value.channel_partner) {
+                actions.push('Change Channel Partner')
+            }
         }
 
-        if ((isTerritoryAdmin.value || isPartnerAdmin.value) &&
-            ['Assigned', 'Accepted'].includes(activeOrder.value.order_status) &&
+        const status = activeOrder.value.order_status
+        const hasPartner = !!activeOrder.value.channel_partner
+        
+        if (hasPartner) {
+             let canMarkDelivered = false
+             if (isTerritoryAdmin.value && ['Assigned', 'Accepted'].includes(status)) {
+                 canMarkDelivered = true
+             }
+             if (isPartnerAdmin.value && status === 'Accepted') {
+                 canMarkDelivered = true
+             }
+             
+             if (canMarkDelivered) {
+                 actions.push('Mark Delivered')
+             }
+        }
+
+        if (isPartnerAdmin.value &&
+            activeOrder.value.order_status === 'Assigned' &&
             activeOrder.value.channel_partner) {
-            actions.push('Mark Delivered')
+            actions.push('Accept Order')
         }
     }
     return actions
@@ -681,15 +719,44 @@ function handleAction(action) {
         deliveryDate.value = new Date().toISOString().split('T')[0]
         deliveryNotes.value = ''
     }
+    if (action === 'Accept Order') {
+        acceptanceNotes.value = ''
+    }
 }
 
 const deliveryDate = ref('')
 const deliveryNotes = ref('')
 const submittingDelivery = ref(false)
+const acceptanceNotes = ref('')
+const acceptingOrder = ref(false)
 
 const markDeliveredResource = createResource({
     url: 'connect_master.api.mark_order_delivered'
 })
+
+const acceptOrderResource = createResource({
+    url: 'connect_master.api.accept_order'
+})
+
+function submitAcceptance() {
+    acceptingOrder.value = true
+    acceptOrderResource.submit({
+        order_name: activeOrder.value.name,
+        notes: acceptanceNotes.value
+    }, {
+        onSuccess: () => {
+            acceptingOrder.value = false
+            currentAction.value = null
+            orders.reload()
+            orderCounts.reload()
+            orderDetails.fetch()
+            activePane.value = 'Timeline'
+        },
+        onError: () => {
+            acceptingOrder.value = false
+        }
+    })
+}
 
 function submitDelivery() {
     if (!deliveryDate.value) return
@@ -991,9 +1058,9 @@ function saveTerritory() {
         onSuccess: () => {
             savingTerritory.value = false
             showChangeTerritoryDialog.value = false
+            closeMenu()
             orders.reload()
             orderCounts.reload()
-            orderDetails.fetch()
         },
         onError: () => {
             savingTerritory.value = false
@@ -1026,9 +1093,9 @@ function saveCategory() {
         onSuccess: () => {
             savingCategory.value = false
             showChangeCategoryDialog.value = false
+            closeMenu()
             orders.reload()
             orderCounts.reload()
-            orderDetails.fetch()
         },
         onError: () => {
             savingCategory.value = false
