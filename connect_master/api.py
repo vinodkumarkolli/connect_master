@@ -7,8 +7,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from frappe.utils import get_url, add_days, now_datetime
 
-@frappe.whitelist()
-def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
+def _get_list_conditions(filters, search):
     if isinstance(filters, str):
         filters = json.loads(filters)
     filters = filters or {}
@@ -57,21 +56,11 @@ def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
             permission_conditions.append(f"co.channel_partner IN ({', '.join(safe_partners)})")
 
     if not permission_conditions:
-        return [] # No access
+        return None, None
         
     permission_clause = f"({' OR '.join(permission_conditions)})"
     conditions.append(permission_clause)
 
-    # 2. Tab Logic
-    if tab == 'Active':
-        conditions.append("co.unresolved_push = 0")
-        conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
-    elif tab == 'Unresolved':
-        conditions.append("co.unresolved_push = 1")
-        conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
-    elif tab == 'History':
-        conditions.append("co.order_status IN ('Fulfilled', 'Cancelled')")
-        
     # 3. Filters
     if filters.get('custom_address_category'):
         conditions.append("co.service_category = %(service_category)s")
@@ -84,9 +73,6 @@ def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
                 safe_cp = [frappe.db.escape(p) for p in cp]
                 conditions.append(f"co.channel_partner IN ({', '.join(safe_cp)})")
             else:
-                # Empty list means no filter or no results?
-                # Usually if filter is set but empty, it means match nothing?
-                # But here it's a filter. If empty, ignore.
                 pass
         else:
             conditions.append("co.channel_partner = %(channel_partner)s")
@@ -120,7 +106,25 @@ def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
         """
         conditions.append(search_clause)
         values['search'] = f"%{search}%"
+        
+    return conditions, values
 
+@frappe.whitelist()
+def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
+    conditions, values = _get_list_conditions(filters, search)
+    if conditions is None:
+        return []
+        
+    # 2. Tab Logic
+    if tab == 'Active':
+        conditions.append("co.unresolved_push = 0")
+        conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
+    elif tab == 'Unresolved':
+        conditions.append("co.unresolved_push = 1")
+        conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
+    elif tab == 'History':
+        conditions.append("co.order_status IN ('Fulfilled', 'Cancelled')")
+        
     where_clause = " AND ".join(conditions)
     
     sql = f"""
@@ -146,6 +150,37 @@ def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
     values['page_len'] = int(page_len)
     
     return frappe.db.sql(sql, values, as_dict=True)
+
+@frappe.whitelist()
+def get_order_counts(filters=None, search=None):
+    conditions, values = _get_list_conditions(filters, search)
+    if conditions is None:
+        return {'Active': 0, 'Unresolved': 0, 'History': 0}
+        
+    counts = {}
+    for tab in ['Active', 'Unresolved', 'History']:
+        tab_conditions = conditions[:]
+        if tab == 'Active':
+            tab_conditions.append("co.unresolved_push = 0")
+            tab_conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
+        elif tab == 'Unresolved':
+            tab_conditions.append("co.unresolved_push = 1")
+            tab_conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
+        elif tab == 'History':
+            tab_conditions.append("co.order_status IN ('Fulfilled', 'Cancelled')")
+            
+        where_clause = " AND ".join(tab_conditions)
+        
+        sql = f"""
+            SELECT COUNT(DISTINCT co.name)
+            FROM `tabConnect Order` co
+            LEFT JOIN `tabAddress` addr ON co.delivery_address = addr.name
+            LEFT JOIN `tabContact` cont ON co.contact = cont.name
+            WHERE {where_clause}
+        """
+        counts[tab] = frappe.db.sql(sql, values)[0][0]
+        
+    return counts
 
 @frappe.whitelist(allow_guest=True)
 def send_otp(email, full_name=None):

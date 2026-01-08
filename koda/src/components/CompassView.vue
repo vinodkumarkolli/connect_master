@@ -30,15 +30,18 @@
                 v-for="tab in tabs"
                 :key="tab"
                 @click="activeTab = tab; orders.reload()"
-                :class="['pb-2 text-sm font-medium border-b-2 transition-colors', activeTab === tab ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700']"
+                :class="['pb-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2', activeTab === tab ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700']"
               >
                 {{ tab }}
+                <span v-if="orderCounts.data && orderCounts.data[tab] > 0" :class="['px-1.5 py-0.5 rounded-full text-xs', activeTab === tab ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-600']">
+                    {{ orderCounts.data[tab] }}
+                </span>
               </button>
           </div>
           
           <!-- Search -->
           <div class="w-64">
-            <Input v-model="searchQuery" placeholder="Search Orders..." @keyup.enter="orders.reload()" />
+            <Input v-model="searchQuery" placeholder="Search Orders..." @keyup.enter="orders.reload(); orderCounts.reload()" />
           </div>
       </div>
     </div>
@@ -55,7 +58,8 @@
         </div>
       </div>
       <div v-else-if="!orders.data || orders.data.length === 0" class="p-12 text-center text-gray-500">
-        No orders found.
+        <span v-if="activeTab === 'History'">There are no orders in your Inbox</span>
+        <span v-else>No orders found.</span>
       </div>
       <div v-else class="h-full">
           <!-- List View -->
@@ -490,6 +494,7 @@ import { Button, Input, LoadingIndicator, createResource, createListResource, Au
 
 const tabs = ['Active', 'Unresolved', 'History']
 const activeTab = ref('Active')
+const initialTabSet = ref(false)
 const currentView = ref('List')
 const showFilters = ref(false)
 const searchQuery = ref('')
@@ -668,6 +673,35 @@ watch(() => userInfo.data, (info) => {
     }
 })
 
+const orderCounts = createResource({
+    url: 'connect_master.api.get_order_counts',
+    auto: true,
+    makeParams() {
+        return {
+            filters: JSON.stringify(filters),
+            search: searchQuery.value
+        }
+    },
+    onSuccess(data) {
+        if (!initialTabSet.value) {
+            let newTab = 'Active'
+            if (data.Active > 0) {
+                newTab = 'Active'
+            } else if (data.Unresolved > 0) {
+                newTab = 'Unresolved'
+            } else {
+                newTab = 'History'
+            }
+            
+            if (activeTab.value !== newTab) {
+                activeTab.value = newTab
+                orders.reload()
+            }
+            initialTabSet.value = true
+        }
+    }
+})
+
 const orders = createResource({
     url: 'connect_master.api.get_compass_orders',
     auto: true,
@@ -687,6 +721,7 @@ const orders = createResource({
 
 function applyFilters() {
     orders.reload()
+    orderCounts.reload()
     showFilters.value = false
 }
 
@@ -707,6 +742,7 @@ function rebuildTree() {
     treeRebuildResource.submit({}, {
         onSuccess: () => {
             orders.reload()
+            orderCounts.reload()
             territories.reload()
         }
     })
@@ -764,6 +800,7 @@ function saveTerritory() {
             savingTerritory.value = false
             showChangeTerritoryDialog.value = false
             orders.reload()
+            orderCounts.reload()
             orderDetails.fetch()
         },
         onError: () => {
@@ -812,6 +849,7 @@ function releaseTerritory() {
             releasing.value = false
             showReleaseDialog.value = false
             orders.reload()
+            orderCounts.reload()
             orderDetails.fetch()
         },
         onError: () => {
