@@ -190,6 +190,9 @@
                         <span :class="['px-2.5 py-0.5 rounded-full text-xs font-medium', getOrderStatusClasses(activeOrder.order_status)]">
                             {{ activeOrder.order_status }}
                         </span>
+                        <span v-if="activeOrder.unresolved_push === 1" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Unresolved
+                        </span>
                     </div>
                     <div class="flex items-center gap-4 text-sm text-gray-500">
                         <div class="flex items-center gap-1.5">
@@ -285,8 +288,11 @@
     
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 mb-1">Service Category</label>
-                            <div class="text-sm text-gray-900">{{ getChannelName(activeOrder.service_category) }}</div>
-                        </div>
+                                <div class="text-sm text-gray-900 mb-2">{{ getChannelName(activeOrder.service_category) }}</div>
+                                <div v-if="isTerritoryAdmin" class="flex gap-2">
+                                    <button @click="openChangeCategoryDialog" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-medium transition-colors">Change</button>
+                                </div>
+                            </div>
 
                         <div v-if="activeOrder.channel_partner">
                             <label class="block text-xs font-medium text-gray-500 mb-1">Channel Partner</label>
@@ -334,6 +340,54 @@
                                     </div>
                                 </div>
                             </div>
+                            <div v-else-if="['Select Channel Partner', 'Change Channel Partner'].includes(currentAction)" class="space-y-3">
+                                <div v-if="channelPartners.loading" class="flex justify-center py-8">
+                                    <LoadingIndicator />
+                                </div>
+                                <div v-else-if="channelPartners.data && channelPartners.data.length > 0" class="space-y-2 max-h-[400px] overflow-y-auto">
+                                    <div
+                                        v-for="partner in channelPartners.data"
+                                        :key="partner.name"
+                                        class="border p-3 rounded-lg cursor-pointer hover:border-blue-500 transition-colors"
+                                        :class="{'ring-2 ring-blue-500 bg-blue-50': selectedChannelPartner === partner.name}"
+                                        @click="selectedChannelPartner = partner.name"
+                                    >
+                                        <div class="font-medium text-sm text-gray-900">{{ partner.partner_name }}</div>
+                                        <div class="text-gray-600 text-xs mt-1" v-if="partner.description">{{ partner.description }}</div>
+                                        <div class="text-gray-500 text-xs mt-2" v-if="partner.address_html" v-html="partner.address_html"></div>
+                                        <div class="text-gray-500 text-xs mt-1" v-if="partner.contact_html" v-html="partner.contact_html"></div>
+                                    </div>
+                                </div>
+                                <div v-else class="text-center py-8 text-gray-500">
+                                    No Channel Partners found for this area.
+                                </div>
+                                
+                                <div class="flex justify-end gap-2 pt-2 border-t">
+                                    <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                    <Button variant="solid" size="sm" @click="submitChannelPartner" :loading="assigningPartner" :disabled="!selectedChannelPartner">
+                                        {{ currentAction === 'Change Channel Partner' ? 'Change' : 'Assign' }} Partner
+                                    </Button>
+                                </div>
+                            </div>
+                            <div v-else-if="currentAction === 'Mark Delivered'" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Delivery Date</label>
+                                    <Input type="date" v-model="deliveryDate" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Delivery Notes</label>
+                                    <textarea
+                                        v-model="deliveryNotes"
+                                        class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                        rows="3"
+                                        placeholder="Enter delivery notes..."
+                                    ></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2 pt-2 border-t">
+                                    <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                    <Button variant="solid" size="sm" @click="submitDelivery" :loading="submittingDelivery">Submit</Button>
+                                </div>
+                            </div>
                             <div v-else>
                                 <p class="text-sm text-gray-500 italic">Form for {{ currentAction }} is under construction.</p>
                             </div>
@@ -376,7 +430,18 @@
                                         </button>
                                     </div>
                                     <div class="text-sm text-gray-700 mt-1" v-if="event.event_type === 'Field Change'">
-                                        Changed <b>{{ event.fieldname }}</b> from <span class="bg-red-50 text-red-600 px-1 rounded">{{ event.from_value || 'Empty' }}</span> to <span class="bg-green-50 text-green-600 px-1 rounded">{{ event.to_value || 'Empty' }}</span>
+                                        <span v-if="event.fieldname === 'resolved_territory'">
+                                            Changed <b>Resolved Territory</b> from <span class="bg-red-50 text-red-600 px-1 rounded">{{ event.from_value || 'Empty' }}</span> to <span class="bg-green-50 text-green-600 px-1 rounded">{{ event.to_value || 'Empty' }}</span>
+                                        </span>
+                                        <span v-else-if="event.fieldname === 'service_category'">
+                                            Changed <b>Service Category</b> from <span class="bg-red-50 text-red-600 px-1 rounded">{{ event.from_value || 'Empty' }}</span> to <span class="bg-green-50 text-green-600 px-1 rounded">{{ event.to_value || 'Empty' }}</span>
+                                        </span>
+                                        <span v-else-if="event.fieldname === 'channel_partner'">
+                                            Changed <b>Channel Partner</b> from <span class="bg-red-50 text-red-600 px-1 rounded">{{ event.from_value || 'Empty' }}</span> to <span class="bg-green-50 text-green-600 px-1 rounded">{{ event.to_value || 'Empty' }}</span>
+                                        </span>
+                                        <span v-else>
+                                            Changed <b>{{ event.fieldname }}</b> from <span class="bg-red-50 text-red-600 px-1 rounded">{{ event.from_value || 'Empty' }}</span> to <span class="bg-green-50 text-green-600 px-1 rounded">{{ event.to_value || 'Empty' }}</span>
+                                        </span>
                                     </div>
                                     <div class="text-sm text-gray-700 mt-1" v-else-if="event.event_type === 'Status Update'">
                                         Order Status changed from <span class="bg-red-50 text-red-600 px-1 rounded">{{ event.from_value || 'Empty' }}</span> to <span class="bg-green-50 text-green-600 px-1 rounded">{{ event.to_value || 'Empty' }}</span>
@@ -423,6 +488,24 @@
         <template #actions>
             <Button variant="subtle" @click="showChangeTerritoryDialog = false">Cancel</Button>
             <Button variant="solid" @click="saveTerritory" :loading="savingTerritory">Update</Button>
+        </template>
+    </Dialog>
+
+    <Dialog v-model="showChangeCategoryDialog">
+        <template #body-title>
+            <h3 class="text-lg font-bold">Change Service Category</h3>
+        </template>
+        <template #body-content>
+            <div class="mt-2">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Select New Category</label>
+                <select v-model="editingCategoryValue" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                    <option v-for="opt in serviceChannels.data" :key="opt.name" :value="opt.name">{{ opt.channel_name }}</option>
+                </select>
+            </div>
+        </template>
+        <template #actions>
+            <Button variant="subtle" @click="showChangeCategoryDialog = false">Cancel</Button>
+            <Button variant="solid" @click="saveCategory" :loading="savingCategory">Update</Button>
         </template>
     </Dialog>
 
@@ -490,7 +573,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { Button, Input, LoadingIndicator, createResource, createListResource, Autocomplete, Dialog } from 'frappe-ui'
+import { Button, Input, LoadingIndicator, createResource, createListResource, Autocomplete, Dialog, frappeRequest } from 'frappe-ui'
 
 const tabs = ['Active', 'Unresolved', 'History']
 const activeTab = ref('Active')
@@ -538,15 +621,33 @@ watch(activeMenuOrderId, (newId) => {
 })
 
 const menuActions = computed(() => {
+    let actions = []
     if (isTerritoryAdmin.value) {
-        if (activeTab.value === 'Active') return ['Action 21', 'Action 22', 'Action 23']
-        if (activeTab.value === 'Unresolved') return ['Action 24', 'Action 25']
-        if (activeTab.value === 'History') return ['Action 26', 'Action 27', 'Action 28']
+        if (activeTab.value === 'Active') actions = ['Action 21', 'Action 22', 'Action 23']
+        else if (activeTab.value === 'Unresolved') actions = ['Action 24', 'Action 25']
+        else if (activeTab.value === 'History') actions = ['Action 26', 'Action 27', 'Action 28']
+    } else {
+        if (activeTab.value === 'Active') actions = ['Action 1', 'Action 2', 'Action 3']
+        else if (activeTab.value === 'Unresolved') actions = ['Action 4', 'Action 5']
+        else if (activeTab.value === 'History') actions = ['Action 6', 'Action 7', 'Action 8']
     }
-    if (activeTab.value === 'Active') return ['Action 1', 'Action 2', 'Action 3']
-    if (activeTab.value === 'Unresolved') return ['Action 4', 'Action 5']
-    if (activeTab.value === 'History') return ['Action 6', 'Action 7', 'Action 8']
-    return []
+
+    if (activeOrder.value) {
+        if (activeOrder.value.order_status === 'Submitted') {
+            actions = ['Select Channel Partner']
+        } else if (isTerritoryAdmin.value &&
+                   ['Assigned', 'Accepted', 'Rejected', 'Held'].includes(activeOrder.value.order_status) &&
+                   activeOrder.value.channel_partner) {
+            actions.push('Change Channel Partner')
+        }
+
+        if ((isTerritoryAdmin.value || isPartnerAdmin.value) &&
+            ['Assigned', 'Accepted'].includes(activeOrder.value.order_status) &&
+            activeOrder.value.channel_partner) {
+            actions.push('Mark Delivered')
+        }
+    }
+    return actions
 })
 
 function toggleMenu(orderId) {
@@ -573,6 +674,97 @@ function openCommentForm() {
 
 function handleAction(action) {
     currentAction.value = action
+    if (['Select Channel Partner', 'Change Channel Partner'].includes(action)) {
+        fetchChannelPartners()
+    }
+    if (action === 'Mark Delivered') {
+        deliveryDate.value = new Date().toISOString().split('T')[0]
+        deliveryNotes.value = ''
+    }
+}
+
+const deliveryDate = ref('')
+const deliveryNotes = ref('')
+const submittingDelivery = ref(false)
+
+const markDeliveredResource = createResource({
+    url: 'connect_master.api.mark_order_delivered'
+})
+
+function submitDelivery() {
+    if (!deliveryDate.value) return
+    
+    submittingDelivery.value = true
+    markDeliveredResource.submit({
+        order_name: activeOrder.value.name,
+        delivery_date: deliveryDate.value,
+        delivery_notes: deliveryNotes.value
+    }, {
+        onSuccess: () => {
+            submittingDelivery.value = false
+            currentAction.value = null
+            orders.reload()
+            orderCounts.reload()
+            orderDetails.fetch()
+            activePane.value = 'Timeline'
+        },
+        onError: () => {
+            submittingDelivery.value = false
+        }
+    })
+}
+
+const channelPartners = reactive({ data: [], loading: false })
+const selectedChannelPartner = ref(null)
+const assigningPartner = ref(false)
+
+async function fetchChannelPartners() {
+    channelPartners.loading = true
+    channelPartners.data = []
+    selectedChannelPartner.value = null
+    
+    try {
+        const res = await frappeRequest({
+            url: 'connect_master.connect_master.doctype.connect_order.connect_order.get_channel_partners',
+            params: {
+                territory: activeOrder.value.custom_resolved_territory,
+                channel: activeOrder.value.service_category
+            }
+        })
+        channelPartners.data = res.message || res
+    } catch (e) {
+        console.error(e)
+    } finally {
+        channelPartners.loading = false
+    }
+}
+
+const assignPartnerResource = createResource({
+    url: 'connect_master.api.assign_channel_partner'
+})
+
+function submitChannelPartner() {
+    if (!selectedChannelPartner.value) return
+    
+    assigningPartner.value = true
+    assignPartnerResource.submit({
+        order_name: activeOrder.value.name,
+        channel_partner: selectedChannelPartner.value
+    }, {
+        onSuccess: () => {
+            assigningPartner.value = false
+            currentAction.value = null
+            selectedChannelPartner.value = null
+            // Refresh
+            orders.reload()
+            orderCounts.reload()
+            orderDetails.fetch()
+            activePane.value = 'Timeline'
+        },
+        onError: () => {
+            assigningPartner.value = false
+        }
+    })
 }
 
 const addCommentResource = createResource({
@@ -809,6 +1001,41 @@ function saveTerritory() {
     })
 }
 
+const showChangeCategoryDialog = ref(false)
+const editingCategoryValue = ref(null)
+const savingCategory = ref(false)
+
+function openChangeCategoryDialog() {
+    editingCategoryValue.value = activeOrder.value.service_category
+    showChangeCategoryDialog.value = true
+}
+
+const updateCategoryResource = createResource({
+    url: 'connect_master.api.update_service_category'
+})
+
+function saveCategory() {
+    if (!editingCategoryValue.value) return
+    
+    savingCategory.value = true
+    
+    updateCategoryResource.submit({
+        order_name: activeOrder.value.name,
+        new_category: editingCategoryValue.value
+    }, {
+        onSuccess: () => {
+            savingCategory.value = false
+            showChangeCategoryDialog.value = false
+            orders.reload()
+            orderCounts.reload()
+            orderDetails.fetch()
+        },
+        onError: () => {
+            savingCategory.value = false
+        }
+    })
+}
+
 const activeOrderTerritory = createResource({
     url: 'frappe.client.get',
     makeParams() {
@@ -848,9 +1075,9 @@ function releaseTerritory() {
         onSuccess: () => {
             releasing.value = false
             showReleaseDialog.value = false
+            closeMenu()
             orders.reload()
             orderCounts.reload()
-            orderDetails.fetch()
         },
         onError: () => {
             releasing.value = false

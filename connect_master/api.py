@@ -129,7 +129,7 @@ def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
     
     sql = f"""
         SELECT DISTINCT
-            co.name, co.order_date, co.order_status, co.service_category, co.user, co.delivery_address, co.channel_partner,
+            co.name, co.order_date, co.order_status, co.service_category, co.user, co.delivery_address, co.channel_partner, co.unresolved_push,
             addr.address_title, addr.address_line1, addr.city, addr.pincode, addr.custom_resolved_territory,
             cont.first_name, cont.last_name, cont.mobile_no, cont.email_id
         FROM
@@ -727,7 +727,7 @@ def release_territory(order_name):
     # 2. Add Timeline Event for Territory Change
     order.append("timeline", {
         "event_type": "Field Change",
-        "fieldname": "custom_resolved_territory",
+        "fieldname": "resolved_territory",
         "from_value": current_territory_name,
         "to_value": parent_most_territory,
         "recorded_time": frappe.utils.now(),
@@ -742,7 +742,7 @@ def release_territory(order_name):
     if old_partner:
         order.append("timeline", {
             "event_type": "Field Change",
-            "fieldname": "custom_channel_partner",
+            "fieldname": "channel_partner",
             "from_value": old_partner,
             "to_value": "None",
             "recorded_time": frappe.utils.now(),
@@ -792,7 +792,7 @@ def update_territory(order_name, new_territory):
     # Timeline Event
     order.append("timeline", {
         "event_type": "Field Change",
-        "fieldname": "custom_resolved_territory",
+        "fieldname": "resolved_territory",
         "from_value": current_territory_name,
         "to_value": new_territory,
         "recorded_time": frappe.utils.now(),
@@ -801,6 +801,41 @@ def update_territory(order_name, new_territory):
     
     order.save(ignore_permissions=True)
     return "Territory Updated Successfully"
+
+@frappe.whitelist()
+def update_service_category(order_name, new_category):
+    if not order_name:
+        frappe.throw("Order Name is required")
+    if not new_category:
+        frappe.throw("New Category is required")
+
+    order = frappe.get_doc("Connect Order", order_name)
+    current_category = order.service_category
+
+    if current_category == new_category:
+        return "No change in category"
+
+    # Update Order
+    order.service_category = new_category
+    
+    # Update Address
+    if order.delivery_address:
+        address = frappe.get_doc("Address", order.delivery_address)
+        address.custom_address_category = new_category
+        address.save(ignore_permissions=True)
+    
+    # Timeline Event
+    order.append("timeline", {
+        "event_type": "Field Change",
+        "fieldname": "service_category",
+        "from_value": current_category,
+        "to_value": new_category,
+        "recorded_time": frappe.utils.now(),
+        "created_by": frappe.session.user
+    })
+    
+    order.save(ignore_permissions=True)
+    return "Service Category Updated Successfully"
 
 @frappe.whitelist()
 def add_comment(order_name, comment, is_internal=0):
@@ -839,3 +874,92 @@ def toggle_timeline_event_visibility(order_name, event_name):
     frappe.db.set_value("Connect Order Timeline Event", event_name, "is_internal", new_value)
     
     return "Visibility Toggled Successfully"
+
+@frappe.whitelist()
+def assign_channel_partner(order_name, channel_partner):
+    if not order_name:
+        frappe.throw("Order Name is required")
+    if not channel_partner:
+        frappe.throw("Channel Partner is required")
+        
+    order = frappe.get_doc("Connect Order", order_name)
+    
+    # Update Channel Partner
+    old_partner = order.channel_partner
+    order.channel_partner = channel_partner
+    
+    # Add Timeline Event for Channel Partner
+    order.append("timeline", {
+        "event_type": "Field Change",
+        "fieldname": "channel_partner",
+        "from_value": old_partner or "",
+        "to_value": channel_partner,
+        "recorded_time": frappe.utils.now(),
+        "created_by": frappe.session.user
+    })
+    
+    # Update Order Status
+    old_status = order.order_status
+    if old_status != "Assigned":
+        order.order_status = "Assigned"
+        
+        # Add Timeline Event for Status Update
+        order.append("timeline", {
+            "event_type": "Status Update",
+            "fieldname": "order_status",
+            "from_value": old_status,
+            "to_value": "Assigned",
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+        
+    order.save(ignore_permissions=True)
+    return "Channel Partner Assigned Successfully"
+
+@frappe.whitelist()
+def mark_order_delivered(order_name, delivery_date, delivery_notes):
+    if not order_name:
+        frappe.throw("Order Name is required")
+    if not delivery_date:
+        frappe.throw("Delivery Date is required")
+        
+    order = frappe.get_doc("Connect Order", order_name)
+    
+    # Update Status and Timestamp
+    old_status = order.order_status
+    order.order_status = "Fulfilled"
+    order.resolved_timestamp = frappe.utils.now()
+    
+    # Timeline: Delivery Date
+    order.append("timeline", {
+        "event_type": "Field Change",
+        "fieldname": "delivery_date",
+        "from_value": "",
+        "to_value": delivery_date,
+        "recorded_time": frappe.utils.now(),
+        "created_by": frappe.session.user
+    })
+    
+    # Timeline: Notes
+    if delivery_notes:
+        order.append("timeline", {
+            "event_type": "Comment",
+            "event_detail": f"Delivery Notes: {delivery_notes}",
+            "is_internal": 0,
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+        
+    # Timeline: Status Update
+    if old_status != "Fulfilled":
+        order.append("timeline", {
+            "event_type": "Status Update",
+            "fieldname": "order_status",
+            "from_value": old_status,
+            "to_value": "Fulfilled",
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+        
+    order.save(ignore_permissions=True)
+    return "Order Marked as Delivered"

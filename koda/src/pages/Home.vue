@@ -181,7 +181,13 @@
                             </span>
                             <span v-else-if="event.event_type === 'Field Change'">
                                 <span v-if="event.fieldname === 'channel_partner'">
-                                    Channel Partner assigned is {{ event.to_value }}
+                                    Changed <b>Channel Partner</b> from {{ event.from_value }} to {{ event.to_value }}
+                                </span>
+                                <span v-else-if="event.fieldname === 'resolved_territory'">
+                                    Changed <b>Resolved Territory</b> from {{ event.from_value }} to {{ event.to_value }}
+                                </span>
+                                <span v-else-if="event.fieldname === 'service_category'">
+                                    Changed <b>Service Category</b> from {{ event.from_value }} to {{ event.to_value }}
                                 </span>
                                 <span v-else>
                                     {{ event.fieldname }} changed
