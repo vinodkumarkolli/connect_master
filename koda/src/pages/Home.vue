@@ -304,7 +304,7 @@ async function submitComment() {
             params: {
                 order_name: currentTrackingOrder.value.name,
                 event_type: 'Comment',
-                payload: { comment: commentText.value }
+                payload: JSON.stringify({ comment: commentText.value })
             }
         })
         

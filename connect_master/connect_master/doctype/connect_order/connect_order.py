@@ -23,7 +23,18 @@ def add_timeline_event(order_name, event_type, payload):
 	doc = frappe.get_doc("Connect Order", order_name)
 	
 	if doc.user != user and user != "Administrator":
-		frappe.throw("Not authorized")
+		# Check if user is linked to the delivery address
+		is_linked = False
+		if doc.delivery_address:
+			is_linked = frappe.db.exists("Dynamic Link", {
+				"parent": doc.delivery_address,
+				"parenttype": "Address",
+				"link_doctype": "User",
+				"link_name": user
+			})
+		
+		if not is_linked:
+			frappe.throw("Not authorized")
 
 	event = {
 		"event_type": event_type,
@@ -145,3 +156,18 @@ def get_channel_partners(territory, channel):
 			p.contact_html = ""
 
 	return partners
+
+def check_unresolved_orders():
+	from frappe.utils import add_days, now_datetime
+	
+	# 2 days ago
+	threshold_date = add_days(now_datetime(), -7)
+	
+	orders = frappe.get_all("Connect Order", filters={
+		"order_status": ["not in", ["Cancelled", "Fulfilled"]],
+		"unresolved_push": 0,
+		"order_date": ["<", threshold_date]
+	}, pluck="name")
+	
+	if orders:
+		frappe.db.set_value("Connect Order", orders, "unresolved_push", 1)

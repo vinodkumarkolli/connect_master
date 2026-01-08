@@ -12,6 +12,9 @@
   "order_status",
   "user",
   "channel_partner",
+  "resolved_timestamp",
+  "resolved_user",
+  "unresolved_push",
   "column_break_ixzz",
   "delivery_address",
   "address_html",
@@ -134,13 +137,36 @@
    "fieldtype": "Link",
    "label": "Channel Partner",
    "options": "Connect Channel Partner"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.docstatus ===1",
+   "fieldname": "resolved_timestamp",
+   "fieldtype": "Date",
+   "label": "Resolved Timestamp"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.docstatus ===1",
+   "fieldname": "resolved_user",
+   "fieldtype": "Link",
+   "label": "Resolved User",
+   "options": "User"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "depends_on": "eval: doc.docstatus ===1",
+   "fieldname": "unresolved_push",
+   "fieldtype": "Check",
+   "label": "Unresolved Push"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-07 17:59:40.344213",
+ "modified": "2026-01-08 09:59:27.194810",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Order",

@@ -36,15 +36,15 @@ def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
         """, {'user': user}, pluck=True)
         
         if assigned_territories:
-            territory_ranges = frappe.db.get_all('Service Territory',
-                filters={'name': ['in', assigned_territories]},
-                fields=['lft', 'rgt'],
-                limit_page_length=0
-            )
+            territory_ranges = frappe.db.sql("""
+                SELECT lft, rgt FROM `tabService Territory`
+                WHERE name IN %s
+            """, (tuple(assigned_territories),), as_dict=True)
             
             if territory_ranges:
-                range_conds = [f"(st.lft >= {d.lft} AND st.rgt <= {d.rgt})" for d in territory_ranges]
-                permission_conditions.append(f"({' OR '.join(range_conds)})")
+                range_conds = [f"(lft >= {d.lft} AND rgt <= {d.rgt})" for d in territory_ranges]
+                allowed_subquery = f"SELECT name FROM `tabService Territory` WHERE {' OR '.join(range_conds)}"
+                permission_conditions.append(f"addr.custom_resolved_territory IN ({allowed_subquery})")
     
     if is_partner_admin:
         assigned_partners = frappe.db.sql("""
@@ -63,16 +63,12 @@ def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
     conditions.append(permission_clause)
 
     # 2. Tab Logic
-    seven_days_ago = add_days(now_datetime(), -7)
-    
     if tab == 'Active':
-        conditions.append("co.order_date >= %(seven_days_ago)s")
+        conditions.append("co.unresolved_push = 0")
         conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
-        values['seven_days_ago'] = seven_days_ago
     elif tab == 'Unresolved':
-        conditions.append("co.order_date < %(seven_days_ago)s")
+        conditions.append("co.unresolved_push = 1")
         conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
-        values['seven_days_ago'] = seven_days_ago
     elif tab == 'History':
         conditions.append("co.order_status IN ('Fulfilled', 'Cancelled')")
         
@@ -107,7 +103,8 @@ def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
         if include_child:
             td = frappe.db.get_value('Service Territory', territory, ['lft', 'rgt'], as_dict=True)
             if td:
-                conditions.append(f"(st.lft >= {td.lft} AND st.rgt <= {td.rgt})")
+                subquery = f"SELECT name FROM `tabService Territory` WHERE lft >= {td.lft} AND rgt <= {td.rgt}"
+                conditions.append(f"addr.custom_resolved_territory IN ({subquery})")
             else:
                 conditions.append("1=0")
         else:
@@ -129,14 +126,12 @@ def get_compass_orders(tab, filters=None, search=None, start=0, page_len=50):
     sql = f"""
         SELECT DISTINCT
             co.name, co.order_date, co.order_status, co.service_category, co.user, co.delivery_address, co.channel_partner,
-            addr.address_title, addr.custom_resolved_territory,
-            cont.first_name, cont.last_name
+            addr.address_title, addr.address_line1, addr.city, addr.pincode, addr.custom_resolved_territory,
+            cont.first_name, cont.last_name, cont.mobile_no, cont.email_id
         FROM
             `tabConnect Order` co
         LEFT JOIN
             `tabAddress` addr ON co.delivery_address = addr.name
-        LEFT JOIN
-            `tabService Territory` st ON addr.custom_resolved_territory = st.name
         LEFT JOIN
             `tabContact` cont ON co.contact = cont.name
         WHERE
@@ -223,7 +218,7 @@ def send_otp(email, full_name=None):
                 if email_settings.use_tls:
                     server.starttls()
             
-            server.login(email_settings.username, email_settings.get_password('password'))
+            # server.login(email_settings.username, email_settings.get_password('password'))
             # server.sendmail(email_settings.sender_email, email, msg.as_string())
             server.quit()
             print(f"OTP sent to {email}: {otp}")
@@ -499,7 +494,7 @@ def get_allowed_territories():
     roles = frappe.get_roles(user)
     
     if "System Manager" in roles:
-        return frappe.db.get_all("Service Territory", fields=["name", "territory_name"], order_by="territory_name asc", limit_page_length=0)
+        return frappe.db.get_all("Service Territory", fields=["name", "territory_name", "parent_service_territory"], order_by="territory_name asc", limit_page_length=0)
         
     assigned_territories = []
     
@@ -527,11 +522,10 @@ def get_allowed_territories():
         return []
         
     # Get ranges
-    territory_ranges = frappe.db.get_all('Service Territory',
-        filters={'name': ['in', assigned_territories]},
-        fields=['lft', 'rgt'],
-        limit_page_length=0
-    )
+    territory_ranges = frappe.db.sql("""
+        SELECT lft, rgt FROM `tabService Territory`
+        WHERE name IN %s
+    """, (tuple(assigned_territories),), as_dict=True)
     
     if not territory_ranges:
         return []
@@ -544,7 +538,7 @@ def get_allowed_territories():
     where_clause = " OR ".join(or_conditions)
     
     return frappe.db.sql(f"""
-        SELECT name, territory_name 
+        SELECT name, territory_name, parent_service_territory
         FROM `tabService Territory`
         WHERE {where_clause}
         ORDER BY territory_name ASC
@@ -601,6 +595,15 @@ def get_user_info():
     return info
 
 @frappe.whitelist()
+def rebuild_service_territory_tree():
+    if "System Manager" not in frappe.get_roles():
+        frappe.throw("Only System Manager can rebuild tree")
+    
+    from frappe.utils.nestedset import rebuild_tree
+    rebuild_tree("Service Territory")
+    return "Tree rebuilt successfully"
+
+@frappe.whitelist()
 def get_allowed_partners():
     user = frappe.session.user
     roles = frappe.get_roles(user)
@@ -615,11 +618,10 @@ def get_allowed_partners():
         """, {'user': user}, pluck=True)
         
         if assigned_territories:
-            territory_ranges = frappe.db.get_all('Service Territory',
-                filters={'name': ['in', assigned_territories]},
-                fields=['lft', 'rgt'],
-                limit_page_length=0
-            )
+            territory_ranges = frappe.db.sql("""
+                SELECT lft, rgt FROM `tabService Territory`
+                WHERE name IN %s
+            """, (tuple(assigned_territories),), as_dict=True)
             
             if territory_ranges:
                 or_conditions = []
@@ -652,3 +654,153 @@ def get_allowed_partners():
                 limit_page_length=0)
                 
     return []
+
+@frappe.whitelist()
+def release_territory(order_name):
+    if not order_name:
+        frappe.throw("Order Name is required")
+    
+    order = frappe.get_doc("Connect Order", order_name)
+    
+    # Check status constraint
+    if order.order_status in ["Fulfilled", "Cancelled"]:
+        frappe.throw("Cannot release territory for Fulfilled or Cancelled orders")
+        
+    if not order.delivery_address:
+        frappe.throw("Delivery Address is missing")
+        
+    address = frappe.get_doc("Address", order.delivery_address)
+    current_territory_name = address.custom_resolved_territory
+    
+    if not current_territory_name:
+        frappe.throw("No Resolved Territory found on Delivery Address")
+        
+    current_territory = frappe.get_doc("Service Territory", current_territory_name)
+    
+    # Find Parent Most Territory
+    parent_most_territory = current_territory.name
+    parent_name = current_territory.parent_service_territory
+    
+    while parent_name:
+        parent_most_territory = parent_name
+        parent_name = frappe.db.get_value("Service Territory", parent_name, "parent_service_territory")
+        
+    # 1. Modify "Resolved Territory" of "delivery_address"
+    address.custom_resolved_territory = parent_most_territory
+    address.save(ignore_permissions=True)
+    
+    # 2. Add Timeline Event for Territory Change
+    order.append("timeline", {
+        "event_type": "Field Change",
+        "fieldname": "custom_resolved_territory",
+        "from_value": current_territory_name,
+        "to_value": parent_most_territory,
+        "recorded_time": frappe.utils.now(),
+        "created_by": frappe.session.user
+    })
+    
+    # 3. Modify "Channel Partner" to null
+    old_partner = order.channel_partner
+    order.channel_partner = None
+    
+    # 4. Add Timeline Event for Channel Partner
+    if old_partner:
+        order.append("timeline", {
+            "event_type": "Field Change",
+            "fieldname": "custom_channel_partner",
+            "from_value": old_partner,
+            "to_value": "None",
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+        
+    # 5. Modify "Order Status" to "Submitted"
+    old_status = order.order_status
+    order.order_status = "Submitted"
+    
+    # 6. Add Timeline Event for Status Update
+    if old_status != "Submitted":
+        order.append("timeline", {
+            "event_type": "Status Update",
+            "fieldname": "order_status",
+            "from_value": old_status,
+            "to_value": "Submitted",
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+        
+    order.save(ignore_permissions=True)
+    
+    return "Territory Released Successfully"
+
+@frappe.whitelist()
+def update_territory(order_name, new_territory):
+    if not order_name:
+        frappe.throw("Order Name is required")
+    if not new_territory:
+        frappe.throw("New Territory is required")
+
+    order = frappe.get_doc("Connect Order", order_name)
+    if not order.delivery_address:
+        frappe.throw("Delivery Address is missing")
+
+    address = frappe.get_doc("Address", order.delivery_address)
+    current_territory_name = address.custom_resolved_territory
+
+    if current_territory_name == new_territory:
+        return "No change in territory"
+
+    # Update Address
+    address.custom_resolved_territory = new_territory
+    address.save(ignore_permissions=True)
+
+    # Timeline Event
+    order.append("timeline", {
+        "event_type": "Field Change",
+        "fieldname": "custom_resolved_territory",
+        "from_value": current_territory_name,
+        "to_value": new_territory,
+        "recorded_time": frappe.utils.now(),
+        "created_by": frappe.session.user
+    })
+    
+    order.save(ignore_permissions=True)
+    return "Territory Updated Successfully"
+
+@frappe.whitelist()
+def add_comment(order_name, comment, is_internal=0):
+    if not order_name:
+        frappe.throw("Order Name is required")
+    if not comment:
+        frappe.throw("Comment is required")
+        
+    order = frappe.get_doc("Connect Order", order_name)
+    
+    order.append("timeline", {
+        "event_type": "Comment",
+        "event_detail": comment,
+        "is_internal": int(is_internal),
+        "recorded_time": frappe.utils.now(),
+        "created_by": frappe.session.user
+    })
+    
+    order.save(ignore_permissions=True)
+    return "Comment Added Successfully"
+
+@frappe.whitelist()
+def toggle_timeline_event_visibility(order_name, event_name):
+    if not order_name:
+        frappe.throw("Order Name is required")
+    if not event_name:
+        frappe.throw("Event Name is required")
+    
+    # Check if event exists and get current value
+    is_internal = frappe.db.get_value("Connect Order Timeline Event", event_name, "is_internal")
+    
+    if is_internal is None:
+        frappe.throw("Timeline event not found")
+        
+    new_value = 0 if is_internal else 1
+    frappe.db.set_value("Connect Order Timeline Event", event_name, "is_internal", new_value)
+    
+    return "Visibility Toggled Successfully"

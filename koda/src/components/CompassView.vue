@@ -14,6 +14,9 @@
                 <button @click="currentView = 'Kanban'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', currentView === 'Kanban' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">Kanban</button>
                 <button @click="currentView = 'Summary'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', currentView === 'Summary' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">Summary</button>
             </div>
+            <Button v-if="isSystemManager" @click="rebuildTree" :loading="treeRebuildResource.loading" variant="subtle" size="sm">
+                Rebuild Tree
+            </Button>
             <Button @click="showFilters = !showFilters" :variant="hasActiveFilters ? 'solid' : 'subtle'" size="sm">
                 Filters {{ hasActiveFilters ? '(Active)' : '' }}
             </Button>
@@ -74,7 +77,7 @@
                                 {{ order.address_title }} • {{ order.custom_resolved_territory }}
                             </div>
                             <div class="text-xs text-gray-500 mt-1">
-                                {{ order.user }} • {{ formatDate(order.order_date) }}
+                                {{ order.user }} • {{ getDaysAgo(order.order_date) }}
                             </div>
                         </div>
                     </div>
@@ -83,7 +86,7 @@
                             <div class="text-sm font-medium text-gray-700">{{ getChannelName(order.service_category) }}</div>
                             <div class="text-xs text-gray-500 mt-1" v-if="order.channel_partner">{{ getPartnerName(order.channel_partner) }}</div>
                         </div>
-                        <button @click.stop="toggleMenu(order.name, $event)" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
+                        <button @click.stop="toggleMenu(order.name)" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                         </button>
                     </div>
@@ -114,7 +117,7 @@
                                   <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs" :title="order.user">
                                       {{ order.user ? order.user[0].toUpperCase() : '?' }}
                                   </div>
-                                  <button @click.stop="toggleMenu(order.name, $event)" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
+                                  <button @click.stop="toggleMenu(order.name)" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                                   </button>
                               </div>
@@ -160,7 +163,7 @@
                           <div class="text-xs font-medium text-blue-600">
                               {{ order.user }}
                           </div>
-                          <button @click.stop="toggleMenu(order.name, $event)" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
+                          <button @click.stop="toggleMenu(order.name)" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                           </button>
                       </div>
@@ -170,20 +173,254 @@
       </div>
     </div>
     
-    <!-- Action Menu Overlay -->
-    <div v-if="activeMenuOrderId" class="fixed inset-0 z-40" @click="closeMenu"></div>
+    <!-- Action Menu Modal -->
+    <div v-if="activeMenuOrderId && activeOrder" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" @click="closeMenu"></div>
+        
+        <div class="relative bg-white rounded-xl shadow-xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b flex justify-between items-start bg-gray-50">
+                <div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <h3 class="text-lg font-bold text-gray-900">{{ activeOrder.name }}</h3>
+                        <span :class="['px-2.5 py-0.5 rounded-full text-xs font-medium', getOrderStatusClasses(activeOrder.order_status)]">
+                            {{ activeOrder.order_status }}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-4 text-sm text-gray-500">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-gray-400">📅</span> {{ formatDate(activeOrder.order_date) }}
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-gray-400">👤</span> {{ activeOrder.user }}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <Button variant="subtle" size="sm" @click="openCommentForm">
+                        <template #prefix>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        </template>
+                        Add Comment
+                    </Button>
+                    <button @click="closeMenu" class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="flex flex-col md:flex-row flex-1 overflow-hidden min-h-[400px]">
+                <!-- Pane 1: Order Summary -->
+                <div class="w-full md:w-1/2 p-6 pb-10 border-b md:border-b-0 md:border-r overflow-y-auto bg-white">
+                    <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Order Summary</h4>
+                    
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Delivery Address</label>
+                                <div class="text-sm text-gray-900 font-medium">{{ activeOrder.address_title }}</div>
+                                <div class="text-sm text-gray-700 mt-1">
+                                    {{ activeOrder.address_line1 }}<br>
+                                    {{ activeOrder.city }}<span v-if="activeOrder.pincode"> - {{ activeOrder.pincode }}</span>
+                                </div>
+                                <div class="mt-2 pt-2 border-t border-gray-100">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Resolved Territory</label>
+                                    <div class="text-sm font-medium text-gray-900 break-words mb-2">{{ activeOrder.custom_resolved_territory || 'N/A' }}</div>
+                                    <div v-if="isTerritoryAdmin" class="flex gap-2">
+                                        <button @click="openChangeTerritoryDialog" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-medium transition-colors">Change</button>
+                                        <button v-if="canRelease" @click="showReleaseDialog = true" class="text-xs bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 font-medium transition-colors">Release</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="activeOrder.first_name">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Contact Person</label>
+                                <div class="text-sm text-gray-900 font-medium">{{ activeOrder.first_name }} {{ activeOrder.last_name }}</div>
+                                <div class="text-sm text-gray-700 mt-1 flex items-center gap-2" v-if="activeOrder.mobile_no">
+                                    <span class="text-gray-400 text-xs">📱</span> {{ activeOrder.mobile_no }}
+                                </div>
+                                <div class="text-sm text-gray-700 flex items-center gap-2" v-if="activeOrder.email_id">
+                                    <span class="text-gray-400 text-xs">✉️</span> {{ activeOrder.email_id }}
+                                </div>
+                            </div>
+                        </div>
     
-    <!-- Action Menu Dropdown -->
-    <div v-if="activeMenuOrderId"
-         class="fixed z-50 bg-white rounded-lg shadow-xl border w-40 py-1 overflow-hidden"
-         :style="{ top: menuPosition.top + 'px', left: menuPosition.left + 'px' }">
-        <button v-for="action in menuActions"
-                :key="action"
-                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors"
-                @click="closeMenu">
-            {{ action }}
-        </button>
+                            <div v-if="orderDetails.data && orderDetails.data.items && orderDetails.data.items.length > 0">
+                                <label class="block text-xs font-medium text-gray-500 mb-2">Items</label>
+                                <div class="border rounded-lg overflow-hidden">
+                                    <table class="w-full text-xs">
+                                        <thead class="bg-gray-50 border-b">
+                                            <tr>
+                                                <th class="px-3 py-2 text-left font-medium text-gray-500">Item</th>
+                                                <th class="px-3 py-2 text-right font-medium text-gray-500">Qty</th>
+                                                <th class="px-3 py-2 text-right font-medium text-gray-500">Amt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y">
+                                            <tr v-for="(item, idx) in orderDetails.data.items" :key="idx" class="bg-white">
+                                                <td class="px-3 py-2 text-gray-900">{{ item.item }}</td>
+                                                <td class="px-3 py-2 text-right text-gray-600">{{ item.quantity }}</td>
+                                                <td class="px-3 py-2 text-right text-gray-600">{{ item.line_item_amount }}</td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot class="bg-gray-50 border-t">
+                                            <tr>
+                                                <td colspan="2" class="px-3 py-2 font-bold text-gray-700 text-right">Total</td>
+                                                <td class="px-3 py-2 font-bold text-gray-900 text-right">{{ orderTotal }}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            <div v-else-if="orderDetails.loading" class="text-xs text-gray-500 italic">
+                                Loading items...
+                            </div>
+    
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Service Category</label>
+                            <div class="text-sm text-gray-900">{{ getChannelName(activeOrder.service_category) }}</div>
+                        </div>
+
+                        <div v-if="activeOrder.channel_partner">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Channel Partner</label>
+                            <div class="text-sm text-gray-900">{{ getPartnerName(activeOrder.channel_partner) }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pane 2: Action Center / Timeline -->
+                <div class="w-full md:w-1/2 p-6 pb-10 bg-gray-50 custom-scrollbar">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider" v-if="activePane === 'Action Center'">Action Center</h4>
+                        <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider" v-else>Timeline</h4>
+                        
+                        <div class="flex bg-gray-200 rounded p-0.5">
+                             <button @click="activePane = 'Timeline'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', activePane === 'Timeline' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">Timeline</button>
+                             <button @click="activePane = 'Action Center'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', activePane === 'Action Center' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">Action Center</button>
+                        </div>
+                    </div>
+
+                    <div v-if="activePane === 'Action Center'">
+                        <div v-if="currentAction" class="bg-white p-4 rounded-lg border shadow-sm">
+                            <div class="flex items-center gap-2 mb-3">
+                                <button @click="currentAction = null" class="text-gray-400 hover:text-gray-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                                </button>
+                                <h5 class="font-bold text-gray-800">{{ currentAction }}</h5>
+                            </div>
+                            
+                            <div v-if="currentAction === 'Add Comment'" class="space-y-3">
+                                <textarea
+                                    v-model="commentText"
+                                    class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                    rows="4"
+                                    placeholder="Write your comment here..."
+                                ></textarea>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" v-model="makePublic" id="make_public" class="rounded text-blue-600 focus:ring-blue-500">
+                                        <label for="make_public" class="text-sm text-gray-700 select-none">Make Public</label>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                        <Button variant="solid" size="sm" @click="submitComment" :loading="submittingComment">Submit</Button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-else>
+                                <p class="text-sm text-gray-500 italic">Form for {{ currentAction }} is under construction.</p>
+                            </div>
+                        </div>
+                        <div v-else-if="menuActions.length > 0" class="grid grid-cols-1 gap-3">
+                            <button v-for="action in menuActions"
+                                    :key="action"
+                                    class="flex items-center justify-between w-full px-4 py-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-blue-300 hover:bg-blue-50 transition-all group text-left"
+                                    @click="handleAction(action)">
+                                <span class="font-medium text-gray-700 group-hover:text-blue-700">{{ action }}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div v-else class="text-center py-8 text-gray-500">
+                            <p>No actions available for this order.</p>
+                        </div>
+                    </div>
+                    
+                    <div v-else-if="activePane === 'Timeline'">
+                        <div v-if="orderDetails.data && orderDetails.data.timeline && orderDetails.data.timeline.length > 0" class="space-y-4">
+                            <div v-for="(event, idx) in orderDetails.data.timeline" :key="idx" class="flex gap-3">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-2 h-2 rounded-full bg-gray-300 mt-1.5"></div>
+                                    <div class="w-0.5 flex-1 bg-gray-200 my-1" v-if="idx !== orderDetails.data.timeline.length - 1"></div>
+                                </div>
+                                <div class="pb-4">
+                                    <div class="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                        {{ event.event_type }}
+                                        <span v-if="event.is_internal" class="bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded border border-gray-200">Internal</span>
+                                        <span v-else class="bg-blue-100 text-blue-600 text-xs px-1.5 py-0.5 rounded border border-blue-200">Public</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">{{ formatDate(event.recorded_time) }} • {{ event.created_by }}</div>
+                                    <div class="text-sm text-gray-700 mt-1" v-if="event.event_detail">{{ event.event_detail }}</div>
+                                    <div v-if="isTerritoryAdmin && event.event_type === 'Comment'" class="mt-1">
+                                        <button @click="toggleVisibility(event.name)" class="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1" :disabled="togglingEventId === event.name">
+                                            <span v-if="togglingEventId === event.name">Updating...</span>
+                                            <span v-else>{{ event.is_internal ? 'Make Public' : 'Make Internal' }}</span>
+                                        </button>
+                                    </div>
+                                    <div class="text-sm text-gray-700 mt-1" v-if="event.event_type === 'Field Change'">
+                                        Changed <b>{{ event.fieldname }}</b> from <span class="bg-red-50 text-red-600 px-1 rounded">{{ event.from_value || 'Empty' }}</span> to <span class="bg-green-50 text-green-600 px-1 rounded">{{ event.to_value || 'Empty' }}</span>
+                                    </div>
+                                    <div class="text-sm text-gray-700 mt-1" v-else-if="event.event_type === 'Status Update'">
+                                        Order Status changed from <span class="bg-red-50 text-red-600 px-1 rounded">{{ event.from_value || 'Empty' }}</span> to <span class="bg-green-50 text-green-600 px-1 rounded">{{ event.to_value || 'Empty' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="text-center py-8 text-gray-500">
+                            No timeline events found.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <Dialog v-model="showReleaseDialog">
+        <template #body-title>
+            <h3 class="text-lg font-bold">Release Territory</h3>
+        </template>
+        <template #body-content>
+            <p class="text-gray-600">It will release the order from the current territory, its associated channel partner and move it to the parent territory and order may not be visible to you in future.</p>
+        </template>
+        <template #actions>
+            <Button variant="subtle" @click="showReleaseDialog = false">Cancel</Button>
+            <Button variant="solid" theme="red" @click="releaseTerritory" :loading="releasing">Confirm Release</Button>
+        </template>
+    </Dialog>
+
+    <Dialog v-model="showChangeTerritoryDialog">
+        <template #body-title>
+            <h3 class="text-lg font-bold">Change Territory</h3>
+        </template>
+        <template #body-content>
+            <div class="mt-2">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Select New Territory</label>
+                <Autocomplete
+                    v-model="editingTerritoryValue"
+                    :options="territoryOptions"
+                    placeholder="Select Territory"
+                />
+            </div>
+        </template>
+        <template #actions>
+            <Button variant="subtle" @click="showChangeTerritoryDialog = false">Cancel</Button>
+            <Button variant="solid" @click="saveTerritory" :loading="savingTerritory">Update</Button>
+        </template>
+    </Dialog>
 
     <!-- Overlay for filters -->
     <div v-if="showFilters" class="absolute inset-0 bg-black bg-opacity-20 z-10" @click="showFilters = false"></div>
@@ -249,7 +486,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { Button, Input, LoadingIndicator, createResource, createListResource, Autocomplete } from 'frappe-ui'
+import { Button, Input, LoadingIndicator, createResource, createListResource, Autocomplete, Dialog } from 'frappe-ui'
 
 const tabs = ['Active', 'Unresolved', 'History']
 const activeTab = ref('Active')
@@ -263,7 +500,37 @@ const isTerritoryAdmin = computed(() => {
 })
 
 const activeMenuOrderId = ref(null)
-const menuPosition = reactive({ top: 0, left: 0 })
+const activePane = ref('Action Center')
+const currentAction = ref(null)
+const commentText = ref('')
+const makePublic = ref(false)
+const submittingComment = ref(false)
+
+const activeOrder = computed(() => {
+    if (!activeMenuOrderId.value || !orders.data) return null
+    return orders.data.find(o => o.name === activeMenuOrderId.value)
+})
+
+const orderDetails = createResource({
+    url: 'frappe.client.get',
+    makeParams() {
+        return {
+            doctype: 'Connect Order',
+            name: activeMenuOrderId.value
+        }
+    }
+})
+
+const orderTotal = computed(() => {
+    if (!orderDetails.data || !orderDetails.data.items) return 0
+    return orderDetails.data.items.reduce((sum, item) => sum + (item.line_item_amount || 0), 0)
+})
+
+watch(activeMenuOrderId, (newId) => {
+    if (newId) {
+        orderDetails.fetch()
+    }
+})
 
 const menuActions = computed(() => {
     if (isTerritoryAdmin.value) {
@@ -277,19 +544,82 @@ const menuActions = computed(() => {
     return []
 })
 
-function toggleMenu(orderId, event) {
-    if (activeMenuOrderId.value === orderId) {
-        activeMenuOrderId.value = null
-        return
-    }
-    const rect = event.currentTarget.getBoundingClientRect()
-    menuPosition.top = rect.bottom + 5
-    menuPosition.left = rect.right - 160
+function toggleMenu(orderId) {
     activeMenuOrderId.value = orderId
+    currentAction.value = null
+    commentText.value = ''
+    makePublic.value = false
+    if (menuActions.value.length === 0) {
+        activePane.value = 'Timeline'
+    } else {
+        activePane.value = 'Action Center'
+    }
 }
 
 function closeMenu() {
     activeMenuOrderId.value = null
+    currentAction.value = null
+}
+
+function openCommentForm() {
+    activePane.value = 'Action Center'
+    currentAction.value = 'Add Comment'
+}
+
+function handleAction(action) {
+    currentAction.value = action
+}
+
+const addCommentResource = createResource({
+    url: 'connect_master.api.add_comment'
+})
+
+
+function submitComment() {
+    if (!commentText.value.trim()) return
+    
+    submittingComment.value = true
+    addCommentResource.submit({
+        order_name: activeOrder.value.name,
+        comment: commentText.value,
+        is_internal: makePublic.value ? 0 : 1
+    }, {
+        onSuccess: () => {
+            submittingComment.value = false
+            currentAction.value = null
+            commentText.value = ''
+            makePublic.value = false
+            // Refresh timeline
+            orderDetails.fetch()
+            // Switch to timeline to show the new comment
+            activePane.value = 'Timeline'
+        },
+        onError: () => {
+            submittingComment.value = false
+        }
+    })
+}
+
+const togglingEventId = ref(null)
+
+const toggleVisibilityResource = createResource({
+    url: 'connect_master.api.toggle_timeline_event_visibility'
+})
+
+function toggleVisibility(eventName) {
+    togglingEventId.value = eventName
+    toggleVisibilityResource.submit({
+        order_name: activeOrder.value.name,
+        event_name: eventName
+    }, {
+        onSuccess: () => {
+            orderDetails.fetch()
+            togglingEventId.value = null
+        },
+        onError: () => {
+            togglingEventId.value = null
+        }
+    })
 }
 
 const filters = reactive({
@@ -310,6 +640,10 @@ const userInfo = createResource({
 
 const isPartnerAdmin = computed(() => {
     return userInfo.data?.roles?.includes('Partner Admin')
+})
+
+const isSystemManager = computed(() => {
+    return userInfo.data?.roles?.includes('System Manager')
 })
 
 const availableStatuses = computed(() => {
@@ -365,6 +699,19 @@ function clearFilters() {
     applyFilters()
 }
 
+const treeRebuildResource = createResource({
+    url: 'connect_master.api.rebuild_service_territory_tree'
+})
+
+function rebuildTree() {
+    treeRebuildResource.submit({}, {
+        onSuccess: () => {
+            orders.reload()
+            territories.reload()
+        }
+    })
+}
+
 const hasActiveFilters = computed(() => {
     return filters.custom_address_category || 
            filters.custom_resolved_territory || 
@@ -382,6 +729,96 @@ const territories = createResource({
     url: 'connect_master.api.get_allowed_territories',
     auto: true
 })
+
+const showReleaseDialog = ref(false)
+const releasing = ref(false)
+
+const showChangeTerritoryDialog = ref(false)
+const editingTerritoryValue = ref(null)
+const savingTerritory = ref(false)
+
+function openChangeTerritoryDialog() {
+    editingTerritoryValue.value = activeOrder.value.custom_resolved_territory
+    showChangeTerritoryDialog.value = true
+}
+
+const updateTerritoryResource = createResource({
+    url: 'connect_master.api.update_territory'
+})
+
+function saveTerritory() {
+    if (!editingTerritoryValue.value) return
+    
+    savingTerritory.value = true
+    
+    let newVal = editingTerritoryValue.value
+    if (typeof newVal === 'object' && newVal !== null && 'value' in newVal) {
+        newVal = newVal.value
+    }
+    
+    updateTerritoryResource.submit({
+        order_name: activeOrder.value.name,
+        new_territory: newVal
+    }, {
+        onSuccess: () => {
+            savingTerritory.value = false
+            showChangeTerritoryDialog.value = false
+            orders.reload()
+            orderDetails.fetch()
+        },
+        onError: () => {
+            savingTerritory.value = false
+        }
+    })
+}
+
+const activeOrderTerritory = createResource({
+    url: 'frappe.client.get',
+    makeParams() {
+        return {
+            doctype: 'Service Territory',
+            name: activeOrder.value?.custom_resolved_territory
+        }
+    }
+})
+
+watch(() => activeOrder.value?.custom_resolved_territory, (newVal) => {
+    if (newVal) {
+        activeOrderTerritory.fetch()
+    } else {
+        activeOrderTerritory.data = null
+    }
+})
+
+const canRelease = computed(() => {
+    if (!activeOrder.value || !activeOrder.value.custom_resolved_territory) return false
+    if (['Fulfilled', 'Cancelled'].includes(activeOrder.value.order_status)) return false
+    return activeOrderTerritory.data && activeOrderTerritory.data.parent_service_territory
+})
+
+const releaseTerritoryResource = createResource({
+    url: 'connect_master.api.release_territory',
+    makeParams() {
+        return {
+            order_name: activeOrder.value?.name
+        }
+    }
+})
+
+function releaseTerritory() {
+    releasing.value = true
+    releaseTerritoryResource.submit({}, {
+        onSuccess: () => {
+            releasing.value = false
+            showReleaseDialog.value = false
+            orders.reload()
+            orderDetails.fetch()
+        },
+        onError: () => {
+            releasing.value = false
+        }
+    })
+}
 
 const territoryOptions = computed(() => {
     if (!territories.data) return []
@@ -425,6 +862,18 @@ function formatDateShort(dateStr) {
     return new Date(dateStr).toLocaleDateString()
 }
 
+function getDaysAgo(dateStr) {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffTime = Math.abs(now - date)
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    return `${diffDays} days ago`
+}
+
 function getOrderStatusClasses(status) {
     const map = {
         'Draft': 'bg-gray-100 text-gray-800',
@@ -451,3 +900,28 @@ function getOrdersByStatus(status) {
     return orders.data.filter(o => o.order_status === status)
 }
 </script>
+
+<style scoped>
+.custom-scrollbar {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #d1d5db; /* gray-300 */
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af; /* gray-400 */
+}
+</style>

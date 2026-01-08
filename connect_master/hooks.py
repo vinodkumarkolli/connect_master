@@ -147,23 +147,11 @@ after_uninstall = "connect_master.utils.after_uninstall"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"connect_master.tasks.all"
-# 	],
-# 	"daily": [
-# 		"connect_master.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"connect_master.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"connect_master.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"connect_master.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"hourly": [
+		"connect_master.connect_master.doctype.connect_order.connect_order.check_unresolved_orders"
+	],
+}
 
 # Testing
 # -------
