@@ -991,10 +991,98 @@ def accept_order(order_name, notes):
         order.append("timeline", {
             "event_type": "Comment",
             "event_detail": notes,
-            "is_internal": 0,
+            "is_internal": 1,
             "recorded_time": frappe.utils.now(),
             "created_by": frappe.session.user
         })
         
     order.save(ignore_permissions=True)
     return "Order Accepted Successfully"
+
+@frappe.whitelist()
+def reject_order(order_name, notes):
+    if not order_name:
+        frappe.throw("Order Name is required")
+        
+    order = frappe.get_doc("Connect Order", order_name)
+    
+    # Update Channel Partner to NULL
+    old_partner = order.channel_partner
+    if old_partner:
+        order.channel_partner = None
+        
+        # Timeline: Channel Partner Change
+        order.append("timeline", {
+            "event_type": "Field Change",
+            "fieldname": "channel_partner",
+            "from_value": old_partner,
+            "to_value": "None",
+            "is_internal": 1,
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+
+    # Update Status
+    old_status = order.order_status
+    if old_status != "Rejected":
+        order.order_status = "Rejected"
+        
+        # Timeline: Status Update
+        order.append("timeline", {
+            "event_type": "Status Update",
+            "fieldname": "order_status",
+            "from_value": old_status,
+            "to_value": "Rejected",
+            "is_internal": 1,
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+    
+    # Timeline: Notes
+    if notes:
+        order.append("timeline", {
+            "event_type": "Comment",
+            "event_detail": notes,
+            "is_internal": 1,
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+        
+    order.save(ignore_permissions=True)
+    return "Order Rejected Successfully"
+
+@frappe.whitelist()
+def cancel_order(order_name, notes):
+    if not order_name:
+        frappe.throw("Order Name is required")
+        
+    order = frappe.get_doc("Connect Order", order_name)
+    
+    # Update Status
+    old_status = order.order_status
+    if old_status != "Cancelled":
+        order.order_status = "Cancelled"
+        
+        # Timeline: Status Update
+        order.append("timeline", {
+            "event_type": "Status Update",
+            "fieldname": "order_status",
+            "from_value": old_status,
+            "to_value": "Cancelled",
+            "is_internal": 0,
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+    
+    # Timeline: Notes
+    if notes:
+        order.append("timeline", {
+            "event_type": "Comment",
+            "event_detail": notes,
+            "is_internal": 1,
+            "recorded_time": frappe.utils.now(),
+            "created_by": frappe.session.user
+        })
+        
+    order.save(ignore_permissions=True)
+    return "Order Cancelled Successfully"

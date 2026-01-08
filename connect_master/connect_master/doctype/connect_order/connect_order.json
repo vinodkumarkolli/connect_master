@@ -115,7 +115,8 @@
    "fieldname": "order_status",
    "fieldtype": "Select",
    "label": "Order Status",
-   "options": "Submitted\nAssigned\nAccepted\nRejected\nHeld\nCancelled\nFulfilled",
+   "options": "Submitted\nAssigned\nAccepted\nRejected\nCancelled\nFulfilled",
+   "read_only_depends_on": "eval:doc.order_status === 'Fulfilled' || doc.order_status === 'Cancelled'",
    "reqd": 1
   },
   {
@@ -135,14 +136,16 @@
    "fieldname": "channel_partner",
    "fieldtype": "Link",
    "label": "Channel Partner",
-   "options": "Connect Channel Partner"
+   "options": "Connect Channel Partner",
+   "read_only_depends_on": "eval:doc.order_status === 'Fulfilled' || doc.order_status === 'Cancelled'"
   },
   {
    "allow_on_submit": 1,
    "depends_on": "eval: doc.docstatus ===1",
    "fieldname": "resolved_timestamp",
    "fieldtype": "Date",
-   "label": "Resolved Timestamp"
+   "label": "Resolved Timestamp",
+   "read_only_depends_on": "eval:doc.order_status === 'Fulfilled' || doc.order_status === 'Cancelled'"
   },
   {
    "allow_on_submit": 1,
@@ -150,14 +153,15 @@
    "depends_on": "eval: doc.docstatus ===1",
    "fieldname": "unresolved_push",
    "fieldtype": "Check",
-   "label": "Unresolved Push"
+   "label": "Unresolved Push",
+   "read_only_depends_on": "eval:doc.order_status === 'Fulfilled' || doc.order_status === 'Cancelled'"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-08 18:53:21.627632",
+ "modified": "2026-01-08 23:03:44.483543",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Order",

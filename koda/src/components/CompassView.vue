@@ -47,7 +47,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1 overflow-y-auto p-0 relative bg-gray-50">
+    <div :class="['flex-1 p-0 relative bg-gray-50', currentView === 'Kanban' ? 'overflow-hidden' : 'overflow-y-auto']">
       <div v-if="orders.loading" class="flex justify-center p-12">
         <LoadingIndicator />
       </div>
@@ -319,7 +319,7 @@
                                 <button @click="currentAction = null" class="text-gray-400 hover:text-gray-600">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                                 </button>
-                                <h5 class="font-bold text-gray-800">{{ currentAction }}</h5>
+                                <h5 class="font-bold text-gray-800">{{ currentAction === 'Cancel Order' ? 'Cancellation Notes' : currentAction }}</h5>
                             </div>
                             
                             <div v-if="currentAction === 'Add Comment'" class="space-y-3">
@@ -401,6 +401,36 @@
                                 <div class="flex justify-end gap-2 pt-2 border-t">
                                     <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
                                     <Button variant="solid" size="sm" @click="submitAcceptance" :loading="acceptingOrder" :disabled="!acceptanceNotes">Accept Order</Button>
+                                </div>
+                            </div>
+                            <div v-else-if="currentAction === 'Reject Order'" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Notes</label>
+                                    <textarea
+                                        v-model="rejectionNotes"
+                                        class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                        rows="3"
+                                        placeholder="Enter rejection notes..."
+                                    ></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2 pt-2 border-t">
+                                    <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                    <Button variant="solid" theme="red" size="sm" @click="submitRejection" :loading="rejectingOrder" :disabled="!rejectionNotes">Reject Order</Button>
+                                </div>
+                            </div>
+                            <div v-else-if="currentAction === 'Cancel Order'" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Notes</label>
+                                    <textarea
+                                        v-model="cancellationNotes"
+                                        class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                        rows="3"
+                                        placeholder="Enter cancellation notes..."
+                                    ></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2 pt-2 border-t">
+                                    <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                    <Button variant="solid" theme="red" size="sm" @click="submitCancellation" :loading="cancellingOrder" :disabled="!cancellationNotes">Cancel Order</Button>
                                 </div>
                             </div>
                             <div v-else>
@@ -648,15 +678,16 @@ const menuActions = computed(() => {
     }
 
     if (activeOrder.value) {
-        if (activeOrder.value.order_status === 'Submitted') {
+        if (activeOrder.value.order_status === 'Submitted' ||
+           (activeOrder.value.order_status === 'Rejected' && !activeOrder.value.channel_partner)) {
             actions = ['Select Channel Partner']
         } else {
-            if (activeOrder.value.order_status === 'Assigned') {
+            if (['Assigned', 'Accepted'].includes(activeOrder.value.order_status)) {
                 actions = []
             }
 
             if (isTerritoryAdmin.value &&
-                    ['Assigned', 'Accepted', 'Rejected', 'Held'].includes(activeOrder.value.order_status) &&
+                    ['Assigned', 'Accepted', 'Rejected'].includes(activeOrder.value.order_status) &&
                     activeOrder.value.channel_partner) {
                 actions.push('Change Channel Partner')
             }
@@ -683,6 +714,16 @@ const menuActions = computed(() => {
             activeOrder.value.order_status === 'Assigned' &&
             activeOrder.value.channel_partner) {
             actions.push('Accept Order')
+        }
+
+        if (isPartnerAdmin.value &&
+            ['Assigned', 'Accepted'].includes(activeOrder.value.order_status) &&
+            activeOrder.value.channel_partner) {
+            actions.push('Reject Order')
+        }
+
+        if (isTerritoryAdmin.value && ['Assigned', 'Accepted', 'Rejected'].includes(activeOrder.value.order_status)) {
+            actions.push('Cancel Order')
         }
     }
     return actions
@@ -722,6 +763,12 @@ function handleAction(action) {
     if (action === 'Accept Order') {
         acceptanceNotes.value = ''
     }
+    if (action === 'Reject Order') {
+        rejectionNotes.value = ''
+    }
+    if (action === 'Cancel Order') {
+        cancellationNotes.value = ''
+    }
 }
 
 const deliveryDate = ref('')
@@ -729,6 +776,10 @@ const deliveryNotes = ref('')
 const submittingDelivery = ref(false)
 const acceptanceNotes = ref('')
 const acceptingOrder = ref(false)
+const rejectionNotes = ref('')
+const rejectingOrder = ref(false)
+const cancellationNotes = ref('')
+const cancellingOrder = ref(false)
 
 const markDeliveredResource = createResource({
     url: 'connect_master.api.mark_order_delivered'
@@ -737,6 +788,34 @@ const markDeliveredResource = createResource({
 const acceptOrderResource = createResource({
     url: 'connect_master.api.accept_order'
 })
+
+const rejectOrderResource = createResource({
+    url: 'connect_master.api.reject_order'
+})
+
+const cancelOrderResource = createResource({
+    url: 'connect_master.api.cancel_order'
+})
+
+function submitRejection() {
+    rejectingOrder.value = true
+    rejectOrderResource.submit({
+        order_name: activeOrder.value.name,
+        notes: rejectionNotes.value
+    }, {
+        onSuccess: () => {
+            rejectingOrder.value = false
+            currentAction.value = null
+            orders.reload()
+            orderCounts.reload()
+            orderDetails.fetch()
+            activePane.value = 'Timeline'
+        },
+        onError: () => {
+            rejectingOrder.value = false
+        }
+    })
+}
 
 function submitAcceptance() {
     acceptingOrder.value = true
@@ -754,6 +833,26 @@ function submitAcceptance() {
         },
         onError: () => {
             acceptingOrder.value = false
+        }
+    })
+}
+
+function submitCancellation() {
+    cancellingOrder.value = true
+    cancelOrderResource.submit({
+        order_name: activeOrder.value.name,
+        notes: cancellationNotes.value
+    }, {
+        onSuccess: () => {
+            cancellingOrder.value = false
+            currentAction.value = null
+            orders.reload()
+            orderCounts.reload()
+            orderDetails.fetch()
+            activePane.value = 'Timeline'
+        },
+        onError: () => {
+            cancellingOrder.value = false
         }
     })
 }
@@ -894,7 +993,7 @@ const filters = reactive({
     order_status: ''
 })
 
-const allStatuses = ['Submitted', 'Assigned', 'Accepted', 'Rejected', 'Held', 'Cancelled', 'Fulfilled']
+const allStatuses = ['Submitted', 'Assigned', 'Accepted', 'Rejected', 'Cancelled', 'Fulfilled']
 const partnerAdminStatuses = ['Assigned', 'Accepted', 'Rejected', 'Cancelled', 'Fulfilled']
 
 const userInfo = createResource({
@@ -1215,8 +1314,7 @@ function getOrderStatusClasses(status) {
         'Completed': 'bg-green-100 text-green-800',
         'Fulfilled': 'bg-green-100 text-green-800',
         'Cancelled': 'bg-red-100 text-red-800',
-        'Rejected': 'bg-red-100 text-red-800',
-        'Held': 'bg-yellow-100 text-yellow-800'
+        'Rejected': 'bg-red-100 text-red-800'
     }
     return map[status] || 'bg-gray-100 text-gray-800'
 }
@@ -1224,7 +1322,7 @@ function getOrderStatusClasses(status) {
 // Kanban Helpers
 const kanbanStatuses = computed(() => {
     if (activeTab.value === 'History') return ['Fulfilled', 'Cancelled', 'Rejected']
-    return ['Submitted', 'Assigned', 'Accepted', 'Held']
+    return ['Submitted', 'Assigned', 'Accepted']
 })
 
 function getOrdersByStatus(status) {
