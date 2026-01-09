@@ -232,7 +232,7 @@ def send_otp(email, full_name=None):
             sender=sender,
             now=True
         )
-        print(f"OTP sent to {email}: {otp}")
+        # print(f"OTP sent to {email}: {otp}")
     else:
         if not email_settings.outgoing_server:
             frappe.throw("Email settings not configured")
@@ -252,11 +252,12 @@ def send_otp(email, full_name=None):
                 server = smtplib.SMTP(email_settings.outgoing_server, port)
                 if email_settings.use_tls:
                     server.starttls()
-            
-            # server.login(email_settings.username, email_settings.get_password('password'))
-            # server.sendmail(email_settings.sender_email, email, msg.as_string())
+            if frappe.conf.developer_mode:
+                print(f"OTP sent to {email}: {otp}")
+            else:
+                server.login(email_settings.username, email_settings.get_password('password'))
+                server.sendmail(email_settings.sender_email, email, msg.as_string())
             server.quit()
-            print(f"OTP sent to {email}: {otp}")
         except Exception as e:
             frappe.log_error(f"Failed to send OTP email: {str(e)}")
             frappe.throw("Failed to send OTP email. Please try again later.")
