@@ -11,15 +11,15 @@ app_license = "mit"
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
-add_to_apps_screen = [
-    {
-		"name": "connect_master",
-		"logo": "/assets/connect_master//images/radar-logo.png",
-		"title": "Connect Master",
-		"route": "/flex",
-		#"has_permission": "connect_master.api.permission.has_app_permission"
-	}
-]
+# add_to_apps_screen = [
+#     {
+# 		"name": "connect_master",
+# 		"logo": "/assets/connect_master//images/radar-logo.png",
+# 		"title": "Connect Master",
+# 		"route": "/flex",
+# 		#"has_permission": "connect_master.api.permission.has_app_permission"
+# 	}
+# ]
 	
 
 # Includes in <head>
