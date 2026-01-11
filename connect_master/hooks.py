@@ -252,7 +252,7 @@ fixtures = [
     # Export specific DocType records
     {"dt": "Connect Item"},
     {"dt":"Email Template"},
-    {"dt":"Connect Email Settings"},
+    # {"dt":"Connect Email Settings"},
     {"dt":"User","filters": [["email", "=", "customer@example.com"]]}
     # {"dt":"Connect Channel Partner"}
 ]
