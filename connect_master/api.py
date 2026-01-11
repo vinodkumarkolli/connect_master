@@ -1087,3 +1087,97 @@ def cancel_order(order_name, notes):
         
     order.save(ignore_permissions=True)
     return "Order Cancelled Successfully"
+
+@frappe.whitelist()
+def download_orders_csv(tab, filters=None, search=None, status=None):
+    conditions, values = _get_list_conditions(filters, search)
+    if conditions is None:
+        return []
+
+    # Tab Logic (copied from get_compass_orders)
+    if tab == 'Active':
+        conditions.append("co.unresolved_push = 0")
+        conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
+    elif tab == 'Unresolved':
+        conditions.append("co.unresolved_push = 1")
+        conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
+    elif tab == 'History':
+        conditions.append("co.order_status IN ('Fulfilled', 'Cancelled')")
+        
+    if status:
+        conditions.append("co.order_status = %(status)s")
+        values['status'] = status
+        
+    where_clause = " AND ".join(conditions)
+    
+    # Fetch Orders with Address and Contact
+    sql = f"""
+        SELECT DISTINCT
+            co.name, co.order_date, co.order_status, co.service_category, co.user,
+            addr.address_title, addr.address_line1, addr.city, addr.pincode, addr.custom_resolved_territory,
+            cont.first_name, cont.last_name, cont.mobile_no, cont.email_id,
+            p.partner_name
+        FROM
+            `tabConnect Order` co
+        LEFT JOIN
+            `tabAddress` addr ON co.delivery_address = addr.name
+        LEFT JOIN
+            `tabContact` cont ON co.contact = cont.name
+        LEFT JOIN
+            `tabConnect Channel Partner` p ON co.channel_partner = p.name
+        WHERE
+            {where_clause}
+        ORDER BY
+            co.order_date DESC
+    """
+    
+    orders = frappe.db.sql(sql, values, as_dict=True)
+    
+    if not orders:
+        return []
+        
+    # Fetch Items
+    order_names = [o.name for o in orders]
+    items = frappe.db.get_all("Connect Line Item",
+        filters={"parent": ["in", order_names]},
+        fields=["parent", "item", "quantity", "line_item_amount"]
+    )
+    
+    items_map = {}
+    for item in items:
+        if item.parent not in items_map:
+            items_map[item.parent] = []
+        items_map[item.parent].append(item)
+        
+    # Build CSV Data
+    data = []
+    # Header
+    data.append([
+        "Order ID", "Date", "Status", "Category", "Territory", "Partner", "User",
+        "Address Title", "Address Line 1", "City", "Pincode",
+        "Contact Name", "Mobile", "Email",
+        "Item", "Quantity", "Amount"
+    ])
+    
+    for o in orders:
+        order_items = items_map.get(o.name, [])
+        if not order_items:
+            # Order with no items
+            row = [
+                o.name, o.order_date, o.order_status, o.service_category, o.custom_resolved_territory, o.partner_name, o.user,
+                o.address_title, o.address_line1, o.city, o.pincode,
+                f"{o.first_name or ''} {o.last_name or ''}".strip(), o.mobile_no, o.email_id,
+                "", "", ""
+            ]
+            data.append(row)
+        else:
+            for item in order_items:
+                row = [
+                    o.name, o.order_date, o.order_status, o.service_category, o.custom_resolved_territory, o.partner_name, o.user,
+                    o.address_title, o.address_line1, o.city, o.pincode,
+                    f"{o.first_name or ''} {o.last_name or ''}".strip(), o.mobile_no, o.email_id,
+                    item.item, item.quantity, item.line_item_amount
+                ]
+                data.append(row)
+                
+    return data

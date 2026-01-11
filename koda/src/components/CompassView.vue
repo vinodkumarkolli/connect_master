@@ -102,11 +102,25 @@
           </div>
           
           <!-- Kanban View -->
-          <div v-else-if="currentView === 'Kanban'" class="flex h-full overflow-x-auto p-4 gap-4 items-start">
-              <div v-for="status in kanbanStatuses" :key="status" class="w-72 flex-shrink-0 flex flex-col bg-gray-100 rounded-lg max-h-full">
+          <div v-else-if="currentView === 'Kanban'" class="flex h-full overflow-x-auto p-4 gap-4 items-start relative">
+              <div v-if="activeKanbanMenu" class="fixed inset-0 z-0" @click="activeKanbanMenu = null"></div>
+              <div v-for="status in kanbanStatuses" :key="status" class="w-72 flex-shrink-0 flex flex-col bg-gray-100 rounded-lg max-h-full z-10">
                   <div class="p-3 font-bold text-gray-700 text-sm uppercase flex justify-between items-center">
-                      {{ status }}
-                      <span class="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">{{ getOrdersByStatus(status).length }}</span>
+                      <div class="flex items-center gap-2">
+                          {{ status }}
+                          <span class="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">{{ getOrdersByStatus(status).length }}</span>
+                      </div>
+                      <div class="relative">
+                          <button @click.stop="toggleKanbanMenu(status)" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-200">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                          </button>
+                          <div v-if="activeKanbanMenu === status" class="absolute right-0 top-full mt-1 w-40 bg-white rounded-md shadow-lg border z-20 py-1">
+                              <button @click="downloadKanbanCsv(status); activeKanbanMenu = null" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                  Download CSV
+                              </button>
+                          </div>
+                      </div>
                   </div>
                   <div class="p-2 space-y-2 overflow-y-auto flex-1">
                       <div v-for="order in getOrdersByStatus(status)" :key="order.name" class="bg-white p-3 rounded shadow-sm border hover:shadow-md transition-shadow cursor-pointer">
@@ -310,7 +324,7 @@
                         <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider" v-if="activePane === 'Action Center'">Action Center</h4>
                         <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider" v-else>Timeline</h4>
                         
-                        <div class="flex bg-gray-200 rounded p-0.5">
+                        <div class="flex bg-gray-200 rounded p-0.5" v-if="activeTab !== 'History'">
                              <button @click="activePane = 'Timeline'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', activePane === 'Timeline' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">Timeline</button>
                              <button @click="activePane = 'Action Center'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', activePane === 'Action Center' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">Action Center</button>
                         </div>
@@ -319,7 +333,7 @@
                     <div v-if="activePane === 'Action Center'">
                         <div v-if="currentAction" class="bg-white p-4 rounded-lg border shadow-sm">
                             <div class="flex items-center gap-2 mb-3">
-                                <button @click="currentAction = null" class="text-gray-400 hover:text-gray-600">
+                                <button @click="cancelAction" class="text-gray-400 hover:text-gray-600">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                                 </button>
                                 <h5 class="font-bold text-gray-800">{{ currentAction === 'Cancel Order' ? 'Cancellation Notes' : currentAction }}</h5>
@@ -338,7 +352,7 @@
                                         <label for="make_public" class="text-sm text-gray-700 select-none">Make Public</label>
                                     </div>
                                     <div class="flex gap-2">
-                                        <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                        <Button variant="subtle" size="sm" @click="cancelAction">Cancel</Button>
                                         <Button variant="solid" size="sm" @click="submitComment" :loading="submittingComment">Submit</Button>
                                     </div>
                                 </div>
@@ -366,7 +380,7 @@
                                 </div>
                                 
                                 <div class="flex justify-end gap-2 pt-2 border-t">
-                                    <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                    <Button variant="subtle" size="sm" @click="cancelAction">Cancel</Button>
                                     <Button variant="solid" size="sm" @click="submitChannelPartner" :loading="assigningPartner" :disabled="!selectedChannelPartner">
                                         {{ currentAction === 'Change Channel Partner' ? 'Change' : 'Assign' }} Partner
                                     </Button>
@@ -387,7 +401,7 @@
                                     ></textarea>
                                 </div>
                                 <div class="flex justify-end gap-2 pt-2 border-t">
-                                    <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                    <Button variant="subtle" size="sm" @click="cancelAction">Cancel</Button>
                                     <Button variant="solid" size="sm" @click="submitDelivery" :loading="submittingDelivery" :disabled="!deliveryDate || !deliveryNotes">Submit</Button>
                                 </div>
                             </div>
@@ -402,7 +416,7 @@
                                     ></textarea>
                                 </div>
                                 <div class="flex justify-end gap-2 pt-2 border-t">
-                                    <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                    <Button variant="subtle" size="sm" @click="cancelAction">Cancel</Button>
                                     <Button variant="solid" size="sm" @click="submitAcceptance" :loading="acceptingOrder" :disabled="!acceptanceNotes">Accept Order</Button>
                                 </div>
                             </div>
@@ -417,7 +431,7 @@
                                     ></textarea>
                                 </div>
                                 <div class="flex justify-end gap-2 pt-2 border-t">
-                                    <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                    <Button variant="subtle" size="sm" @click="cancelAction">Cancel</Button>
                                     <Button variant="solid" theme="red" size="sm" @click="submitRejection" :loading="rejectingOrder" :disabled="!rejectionNotes">Reject Order</Button>
                                 </div>
                             </div>
@@ -432,7 +446,7 @@
                                     ></textarea>
                                 </div>
                                 <div class="flex justify-end gap-2 pt-2 border-t">
-                                    <Button variant="subtle" size="sm" @click="currentAction = null">Cancel</Button>
+                                    <Button variant="subtle" size="sm" @click="cancelAction">Cancel</Button>
                                     <Button variant="solid" theme="red" size="sm" @click="submitCancellation" :loading="cancellingOrder" :disabled="!cancellationNotes">Cancel Order</Button>
                                 </div>
                             </div>
@@ -635,6 +649,7 @@ const isTerritoryAdmin = computed(() => {
     return userInfo.data?.roles?.includes('Territory Admin')
 })
 
+const activeKanbanMenu = ref(null)
 const activeMenuOrderId = ref(null)
 const activePane = ref('Action Center')
 const currentAction = ref(null)
@@ -673,11 +688,9 @@ const menuActions = computed(() => {
     if (isTerritoryAdmin.value) {
         if (activeTab.value === 'Active') actions = ['Action 21', 'Action 22', 'Action 23']
         else if (activeTab.value === 'Unresolved') actions = ['Action 24', 'Action 25']
-        else if (activeTab.value === 'History') actions = ['Action 26', 'Action 27', 'Action 28']
     } else {
         if (activeTab.value === 'Active') actions = ['Action 1', 'Action 2', 'Action 3']
         else if (activeTab.value === 'Unresolved') actions = ['Action 4', 'Action 5']
-        else if (activeTab.value === 'History') actions = ['Action 6', 'Action 7', 'Action 8']
     }
 
     if (activeOrder.value) {
@@ -737,7 +750,7 @@ function toggleMenu(orderId) {
     currentAction.value = null
     commentText.value = ''
     makePublic.value = false
-    if (menuActions.value.length === 0) {
+    if (activeTab.value === 'History' || menuActions.value.length === 0) {
         activePane.value = 'Timeline'
     } else {
         activePane.value = 'Action Center'
@@ -752,6 +765,13 @@ function closeMenu() {
 function openCommentForm() {
     activePane.value = 'Action Center'
     currentAction.value = 'Add Comment'
+}
+
+function cancelAction() {
+    currentAction.value = null
+    if (activeTab.value === 'History') {
+        activePane.value = 'Timeline'
+    }
 }
 
 function handleAction(action) {
@@ -939,7 +959,6 @@ function submitChannelPartner() {
 const addCommentResource = createResource({
     url: 'connect_master.api.add_comment'
 })
-
 
 function submitComment() {
     if (!commentText.value.trim()) return
@@ -1325,12 +1344,53 @@ function getOrderStatusClasses(status) {
 // Kanban Helpers
 const kanbanStatuses = computed(() => {
     if (activeTab.value === 'History') return ['Fulfilled', 'Cancelled', 'Rejected']
-    return ['Submitted', 'Assigned', 'Accepted']
+    return ['Submitted', 'Assigned', 'Accepted', 'Rejected']
 })
 
 function getOrdersByStatus(status) {
     if (!orders.data) return []
     return orders.data.filter(o => o.order_status === status)
+}
+
+function toggleKanbanMenu(status) {
+    if (activeKanbanMenu.value === status) {
+        activeKanbanMenu.value = null
+    } else {
+        activeKanbanMenu.value = status
+    }
+}
+
+const downloadCsvResource = createResource({
+    url: 'connect_master.api.download_orders_csv'
+})
+
+function downloadKanbanCsv(status) {
+    downloadCsvResource.submit({
+        tab: activeTab.value,
+        filters: JSON.stringify(filters),
+        search: searchQuery.value,
+        status: status
+    }, {
+        onSuccess: (data) => {
+            if (!data || data.length === 0) return
+            
+            const csvContent = data.map(row =>
+                row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')
+            ).join('\n')
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+            const link = document.createElement('a')
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob)
+                link.setAttribute('href', url)
+                link.setAttribute('download', `${status}_orders.csv`)
+                link.style.visibility = 'hidden'
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+            }
+        }
+    })
 }
 </script>
 
