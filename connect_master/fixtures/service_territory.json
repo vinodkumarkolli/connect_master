@@ -5,55 +5,12 @@
   "docstatus": 0,
   "doctype": "Service Territory",
   "is_group": 1,
-  "modified": "2026-01-07 13:08:42.905743",
-  "name": "India",
-  "old_parent": "",
-  "parent_service_territory": null,
-  "territory_admins": [],
-  "territory_name": "India"
- },
- {
-  "allow_in_search": 0,
-  "disabled": 0,
-  "docstatus": 0,
-  "doctype": "Service Territory",
-  "is_group": 1,
-  "modified": "2025-12-29 21:39:24.771715",
-  "name": "Tamil Nadu",
-  "old_parent": "India",
-  "parent_service_territory": "India",
-  "territory_admins": [],
-  "territory_name": "Tamil Nadu"
- },
- {
-  "allow_in_search": 0,
-  "disabled": 0,
-  "docstatus": 0,
-  "doctype": "Service Territory",
-  "is_group": 1,
-  "modified": "2026-01-07 13:08:51.079411",
+  "modified": "2026-01-08 17:17:28.941616",
   "name": "Chennai",
   "old_parent": "Tamil Nadu",
   "parent_service_territory": "Tamil Nadu",
-  "territory_admins": [
-   {
-    "user": "sravienterprises1@gmail.com"
-   }
-  ],
-  "territory_name": "Chennai"
- },
- {
-  "allow_in_search": 0,
-  "disabled": 0,
-  "docstatus": 0,
-  "doctype": "Service Territory",
-  "is_group": 1,
-  "modified": "2026-01-07 14:45:15.441213",
-  "name": "Tiruvallur",
-  "old_parent": "Tamil Nadu",
-  "parent_service_territory": "Tamil Nadu",
   "territory_admins": [],
-  "territory_name": "Tiruvallur"
+  "territory_name": "Chennai"
  },
  {
   "allow_in_search": 0,
@@ -67,19 +24,6 @@
   "parent_service_territory": "Chennai",
   "territory_admins": [],
   "territory_name": "Central Chennai"
- },
- {
-  "allow_in_search": 0,
-  "disabled": 0,
-  "docstatus": 0,
-  "doctype": "Service Territory",
-  "is_group": 1,
-  "modified": "2026-01-06 09:06:17.902498",
-  "name": "South Chennai",
-  "old_parent": "Chennai",
-  "parent_service_territory": "Chennai",
-  "territory_admins": [],
-  "territory_name": "South Chennai"
  },
  {
   "allow_in_search": 1,
@@ -108,17 +52,47 @@
   "territory_name": "600116"
  },
  {
+  "allow_in_search": 0,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Service Territory",
+  "is_group": 1,
+  "modified": "2026-01-06 09:06:17.902498",
+  "name": "South Chennai",
+  "old_parent": "Chennai",
+  "parent_service_territory": "Chennai",
+  "territory_admins": [],
+  "territory_name": "South Chennai"
+ },
+ {
+  "allow_in_search": 0,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Service Territory",
+  "is_group": 1,
+  "modified": "2026-01-08 17:17:35.378344",
+  "name": "India",
+  "old_parent": "",
+  "parent_service_territory": null,
+  "territory_admins": [
+   {
+    "user": "sravienterprises1@gmail.com"
+   }
+  ],
+  "territory_name": "India"
+ },
+ {
   "allow_in_search": 1,
   "disabled": 0,
   "docstatus": 0,
   "doctype": "Service Territory",
-  "is_group": 0,
-  "modified": "2026-01-06 22:22:15.481789",
-  "name": "600130",
-  "old_parent": "South Chennai",
-  "parent_service_territory": "South Chennai",
+  "is_group": 1,
+  "modified": "2026-01-08 17:33:05.528134",
+  "name": "Tiruvallur",
+  "old_parent": "Tamil Nadu",
+  "parent_service_territory": "Tamil Nadu",
   "territory_admins": [],
-  "territory_name": "600130"
+  "territory_name": "Tiruvallur"
  },
  {
   "allow_in_search": 1,
@@ -132,5 +106,31 @@
   "parent_service_territory": "Tiruvallur",
   "territory_admins": [],
   "territory_name": "601201"
+ },
+ {
+  "allow_in_search": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Service Territory",
+  "is_group": 0,
+  "modified": "2026-01-08 17:02:43.788736",
+  "name": "600130",
+  "old_parent": "South Chennai",
+  "parent_service_territory": "South Chennai",
+  "territory_admins": [],
+  "territory_name": "600130"
+ },
+ {
+  "allow_in_search": 0,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Service Territory",
+  "is_group": 1,
+  "modified": "2025-12-29 21:39:24.771715",
+  "name": "Tamil Nadu",
+  "old_parent": "India",
+  "parent_service_territory": "India",
+  "territory_admins": [],
+  "territory_name": "Tamil Nadu"
  }
 ]

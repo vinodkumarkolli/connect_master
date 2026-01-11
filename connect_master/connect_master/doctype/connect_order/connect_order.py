@@ -2,6 +2,9 @@
 # For license information, please see license.txt
 
 import frappe
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from frappe.model.document import Document
 from frappe.utils import now
 
@@ -9,6 +12,138 @@ from frappe.utils import now
 class ConnectOrder(Document):
 	def before_submit(self):
 		pass
+
+	def on_submit(self):
+		self.send_order_notifications()
+
+	def send_order_notifications(self):
+		# 1. Territory Admin Notification
+		self.notify_territory_admins()
+		
+		# 2. Channel Partner Notification
+		self.notify_channel_partners()
+
+	def notify_territory_admins(self):
+		if not self.delivery_address:
+			return
+
+		# Get resolved territory from Address
+		resolved_territory = frappe.db.get_value("Address", self.delivery_address, "custom_resolved_territory")
+		if not resolved_territory:
+			return
+
+		admins = []
+		current_territory = resolved_territory
+		
+		# Traverse up until admins are found
+		while current_territory:
+			territory_doc = frappe.get_doc("Service Territory", current_territory)
+			
+			# Check for admins in current territory
+			if territory_doc.territory_admins:
+				for admin in territory_doc.territory_admins:
+					if admin.user:
+						admins.append(admin.user)
+			
+			if admins:
+				break
+			
+			# Move to parent
+			current_territory = territory_doc.parent_service_territory
+		
+		if admins:
+			self.send_email(admins)
+		else:
+			# Raven alert placeholder (pass for now)
+			pass
+
+	def notify_channel_partners(self):
+		if not self.channel_partner:
+			return
+
+		partner_doc = frappe.get_doc("Connect Channel Partner", self.channel_partner)
+		
+		if partner_doc.notification_type == "Transactional":
+			recipients = []
+			if partner_doc.users:
+				for user_row in partner_doc.users:
+					if user_row.user:
+						recipients.append(user_row.user)
+			
+			if recipients:
+				self.send_email(recipients)
+
+	def send_email(self, recipients):
+		# Remove duplicates
+		recipients = list(set(recipients))
+		final_recipients = []
+		for user in recipients:
+			email = frappe.db.get_value("User", user, "email") or user
+			final_recipients.append(email)
+		
+		if not final_recipients:
+			return
+
+		# Get Email Settings
+		email_settings = frappe.get_single("Connect Email Settings")
+		
+		# Get Email Template
+		template_name = "Order Notification for internal users"
+		try:
+			template = frappe.get_doc("Email Template", template_name)
+		except frappe.DoesNotExistError:
+			frappe.log_error(f"Email Template {template_name} not found")
+			return
+
+		# Render Template
+		context = {"doc": self}
+		subject = frappe.render_template(template.subject, context)
+		message = frappe.render_template(template.response_html or template.response, context)
+
+		if email_settings.settings_type == "Frappe Inbuilt":
+			sender = None
+			if email_settings.email_account:
+				sender = frappe.db.get_value("Email Account", email_settings.email_account, "email_id")
+
+			frappe.sendmail(
+				recipients=final_recipients,
+				subject=subject,
+				message=message,
+				sender=sender,
+				now=True
+			)
+		else:
+			if not email_settings.outgoing_server:
+				frappe.log_error("Email settings not configured for Connect Order notification")
+				return
+			
+			try:
+				port = int(email_settings.port) if email_settings.port else 587
+				
+				# Connect to server
+				if email_settings.use_ssl:
+					server = smtplib.SMTP_SSL(email_settings.outgoing_server, port)
+				else:
+					server = smtplib.SMTP(email_settings.outgoing_server, port)
+					if email_settings.use_tls:
+						server.starttls()
+				
+				# Login
+				server.login(email_settings.username, email_settings.get_password('password'))
+				
+				for recipient in final_recipients:
+					msg = MIMEMultipart()
+					msg['From'] = email_settings.sender_email
+					msg['To'] = recipient
+					msg['Subject'] = subject
+					msg.attach(MIMEText(message, 'html'))
+					
+					server.sendmail(email_settings.sender_email, recipient, msg.as_string())
+				
+				server.quit()
+				
+			except Exception as e:
+				frappe.log_error(f"Failed to send Connect Order notification: {str(e)}")
 
 @frappe.whitelist()
 def add_timeline_event(order_name, event_type, payload):

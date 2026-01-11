@@ -16,7 +16,13 @@
   "service_territories",
   "excluded_service_territories",
   "section_break_edsu",
-  "users"
+  "users",
+  "notification_settings_section",
+  "column_break_mcke",
+  "notification_type",
+  "excluded",
+  "column_break_varn",
+  "subscribe_to_performance_reports"
  ],
  "fields": [
   {
@@ -81,12 +87,45 @@
    "fieldtype": "Table MultiSelect",
    "label": "Users",
    "options": "Connect Map Users"
+  },
+  {
+   "fieldname": "notification_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Notification Settings"
+  },
+  {
+   "description": "If Scheduled, all the orders aggregated for a day will be shared in a single mail in PDF",
+   "fieldname": "notification_type",
+   "fieldtype": "Select",
+   "label": "Notification Type",
+   "options": "Transactional\nScheduled"
+  },
+  {
+   "default": "0",
+   "fieldname": "subscribe_to_performance_reports",
+   "fieldtype": "Check",
+   "label": "Subscribe to Performance Reports"
+  },
+  {
+   "fieldname": "column_break_mcke",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Channel Partner users excluded from receiving notifications",
+   "fieldname": "excluded",
+   "fieldtype": "Table MultiSelect",
+   "label": "Excluded",
+   "options": "Connect Map Users"
+  },
+  {
+   "fieldname": "column_break_varn",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-06 22:01:01.848638",
+ "modified": "2026-01-12 01:03:14.122715",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Channel Partner",

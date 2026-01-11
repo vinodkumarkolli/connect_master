@@ -6,7 +6,7 @@
 
     <div v-else-if="!session.data || session.data === 'Guest'">
       <!-- Step 1: Welcome -->
-      <div class="text-center space-y-6 py-20 bg-white p-6 rounded-lg shadow border border-gray-100 f">
+      <div class="text-center space-y-6 py-12 md:py-20 bg-white p-4 md:p-6 rounded-lg shadow border border-gray-100">
         <h1 class="text-5xl font-bold text-gray-900">Koda</h1>
         <p class="text-xl text-gray-600 max-w-2xl mx-auto">
           We make buying of Sastry Balm easy by connecting you with local vendors/distributors/wholesalers
@@ -18,7 +18,7 @@
         </div>
       </div>
       <!-- Process Flow Section -->
-        <div class="mt-16 mb-12 max-w-5xl mx-auto px-4 bg-white p-6 rounded-lg shadow border border-gray-100 f">
+        <div class="mt-8 md:mt-16 mb-12 max-w-5xl mx-auto px-4 bg-white p-4 md:p-6 rounded-lg shadow border border-gray-100">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
                 
                 <!-- Connector Line (Hidden on mobile, visible on desktop) -->
@@ -73,16 +73,16 @@
       <!-- Top Pane: Actions -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Left Pane: Manage Actions -->
-        <div class="bg-white p-6 rounded-lg shadow border border-gray-100 flex flex-col justify-center">
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-100 flex flex-col justify-center">
             <h2 class="text-lg font-semibold text-gray-800 mb-4">Manage</h2>
             <div class="flex flex-wrap gap-4">
-                <Button @click="manageAddresses">Manage Addresses & Contacts</Button>
+                <Button @click="manageAddresses" class="w-full md:w-auto">Manage Addresses & Contacts</Button>
                 <!-- <Button @click="manageContacts"> Contacts</Button> -->
             </div>
         </div>
 
         <!-- Right Pane: Create Order -->
-        <div class="bg-white p-6 rounded-lg shadow border border-gray-100 flex flex-col items-center justify-center">
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-100 flex flex-col items-center justify-center">
              <Button :appearance="'primary'" size="xl" @click="createOrder" class="w-full md:w-auto">
                 Create Order
              </Button>
@@ -90,7 +90,7 @@
       </div>
 
       <!-- Bottom Pane: Order History -->
-      <div class="bg-white p-6 rounded-lg shadow border border-gray-100 min-h-[400px]">
+      <div class="bg-white p-4 md:p-6 rounded-lg shadow border border-gray-100 min-h-[400px]">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold text-gray-800">Order History</h2>
         </div>
@@ -107,7 +107,7 @@
                         <span class="font-medium">Items:</span> {{ orderQuantities[order.name] || 0 }}
                     </div> -->
                 </div>
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-3">
                     <span :class="getStatusClass(order.order_status)" class="px-3 py-1 rounded-full text-xs font-medium">
                         {{ order.order_status }}
                     </span>

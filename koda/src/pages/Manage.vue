@@ -1,11 +1,20 @@
 <template>
   <div class="max-w-4xl mx-auto py-12 px-4">
-    <div class="flex justify-between items-center mb-8">
-      <div class="flex items-center gap-4">
-        <Button icon-left="arrow-left" variant="subtle" @click="router.push('/')">Home</Button>
-        <h1 class="text-3xl font-bold text-gray-900">Manage Addresses & Contacts</h1>
+    <div class="bg-white rounded-lg shadow border mb-6 overflow-hidden">
+      <div class="p-4 bg-gray-50 flex flex-col gap-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
+          <div class="flex items-center gap-3">
+            <Button icon-left="arrow-left" variant="subtle" size="sm" @click="router.push('/')"/>
+            <div>
+              <h2 class="text-lg font-bold text-gray-800">Manage Contacts</h2>
+              <p class="text-xs text-gray-500">Manage your addresses and contacts</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
+            <Button appearance="primary" size="sm" @click="openAddAddress">Add Address</Button>
+          </div>
+        </div>
       </div>
-      <Button :appearance="'primary'" @click="openAddAddress">Add Address</Button>
     </div>
 
     <div v-if="addresses.loading" class="flex justify-center py-12">
