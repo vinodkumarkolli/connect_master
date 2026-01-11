@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+  <div class="flex min-h-full flex-1 flex-col justify-center px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
       <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">Sign in to your account</h2>
     </div>
@@ -50,9 +50,10 @@
           </div>
 
           <div v-else>
-             <div>
+            <div>
               <label for="otp" class="block text-sm font-medium leading-6 text-gray-900">One Time Password</label>
-              <div class="mt-2 flex gap-2 justify-center">
+              <!-- Wrapper with 2px horizontal margin (mx-[2px]) and responsive gap -->
+              <div class="mt-2 grid grid-cols-6 gap-2 mx-[2px] justify-items-center">
                 <input
                   v-for="(digit, index) in 6"
                   :key="index"
@@ -64,7 +65,7 @@
                   @input="handleOtpInput(index, $event)"
                   @keydown="handleOtpKeydown(index, $event)"
                   @paste="handleOtpPaste"
-                  class="w-12 h-12 text-center text-xl border rounded-md focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 border-gray-300"
+                  class="w-full aspect-square text-center text-xl border rounded-md focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 border-gray-300 min-w-0"
                 />
               </div>
             </div>

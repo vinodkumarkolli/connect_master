@@ -1,7 +1,33 @@
 <template>
   <div class="flex flex-col min-h-screen">
     <header class="flex items-center justify-between px-6 py-4 border-b bg-white relative z-50">
-      <div class="text-xl font-bold cursor-pointer" @click="router.push('/')">Koda</div>
+      <div 
+        class="flex items-center text-xl font-bold cursor-pointer group" 
+        @click="router.push('/')"
+      >
+        <!-- SVG Logo (The 'K') -->
+        <svg 
+          viewBox="0 0 48 48" 
+          class="w-6 h-6 mr-0.5 transition-transform duration-200 group-hover:scale-110" 
+          xmlns="www.w3.org"
+          fill="none" 
+          stroke="currentColor" 
+          stroke-width="3.5" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+        >
+          <!-- The outer box -->
+          <path d="M40.5,5.5H7.5a2,2,0,0,0-2,2v33a2,2,0,0,0,2,2h33a2,2,0,0,0,2-2V7.5A2,2,0,0,0,40.5,5.5Z"/>
+          <!-- The 'K' lines -->
+          <line x1="17.31" y1="10.54" x2="17.31" y2="37.42"/>
+          <line x1="20.78" y1="23.98" x2="30.69" y2="10.63"/>
+          <line x1="20.78" y1="23.98" x2="30.69" y2="37.46"/>
+          <line x1="20.78" y1="23.98" x2="17.31" y2="23.98"/>
+        </svg>
+        
+        <!-- Remaining text -->
+        <span class="tracking-tight">oda</span>
+      </div>
       <div>
         <div v-if="session.data && session.data !== 'Guest'" class="flex items-center gap-2">
           <CustomDropdown :options="userMenuOptions">
@@ -15,7 +41,7 @@
         </div>
       </div>
     </header>
-    <main class="flex-1 flex flex-col">
+    <main class="flex flex-col justify-center items-center">
       <router-view />
     </main>
   </div>

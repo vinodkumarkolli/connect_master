@@ -6,7 +6,7 @@
 
     <div v-else-if="!session.data || session.data === 'Guest'">
       <!-- Step 1: Welcome -->
-      <div class="text-center space-y-6 py-20">
+      <div class="text-center space-y-6 py-20 bg-white p-6 rounded-lg shadow border border-gray-100 f">
         <h1 class="text-5xl font-bold text-gray-900">Koda</h1>
         <p class="text-xl text-gray-600 max-w-2xl mx-auto">
           We make buying of Sastry Balm easy by connecting you with local vendors/distributors/wholesalers
@@ -17,6 +17,54 @@
           </Button>
         </div>
       </div>
+      <!-- Process Flow Section -->
+        <div class="mt-16 mb-12 max-w-5xl mx-auto px-4 bg-white p-6 rounded-lg shadow border border-gray-100 f">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+                
+                <!-- Connector Line (Hidden on mobile, visible on desktop) -->
+                <div class="hidden md:block absolute top-1/4 left-0 w-full h-0.5 bg-gray-200 -z-10"></div>
+
+                <!-- Step 1 -->
+                <div class="flex flex-col items-center group">
+                <div class="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-8 w-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">1. Place Order</h3>
+                <p class="text-sm text-gray-500 text-center px-4 leading-relaxed">
+                    Select your preferred Channel Partner and place your order directly on the Koda App.
+                </p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="flex flex-col items-center group">
+                <div class="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <svg xmlns="www.w3.org" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">2. Verification</h3>
+                <p class="text-sm text-gray-500 text-center px-4 leading-relaxed">
+                    Sravi Enterprises analyzes and allocates the best available Partner for your service.
+                </p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="flex flex-col items-center group">
+                <div class="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-lg mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <svg xmlns="www.w3.org" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">3. Fulfillment</h3>
+                <p class="text-sm text-gray-500 text-center px-4 leading-relaxed">
+                    The Partner fulfills the order while you track live updates in real-time on our application.
+                </p>
+                </div>
+
+            </div>
+        </div>
     </div>
 
     <div v-else class="space-y-8">

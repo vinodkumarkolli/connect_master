@@ -2,30 +2,33 @@
   <div class="bg-white rounded-lg shadow border flex flex-col h-full relative overflow-hidden">
     <!-- Header -->
     <div class="p-4 border-b bg-gray-50 flex flex-col gap-4 flex-shrink-0">
-      <div class="flex justify-between items-center">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
         <div>
           <h2 class="text-lg font-bold text-gray-800">Connect Orders</h2>
           <p class="text-xs text-gray-500">Manage and track orders</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
             <!-- View Selector -->
             <div class="flex bg-gray-200 rounded p-1">
                 <button @click="currentView = 'List'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', currentView === 'List' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">List</button>
                 <button @click="currentView = 'Kanban'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', currentView === 'Kanban' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">Kanban</button>
                 <button @click="currentView = 'Summary'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', currentView === 'Summary' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">Summary</button>
             </div>
+            <Button @click="showFilters = !showFilters" :variant="hasActiveFilters ? 'solid' : 'outline'" size="sm">
+                <template #prefix>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                </template>
+                Filters {{ hasActiveFilters ? '(Active)' : '' }}
+            </Button>
             <Button v-if="isSystemManager" @click="rebuildTree" :loading="treeRebuildResource.loading" variant="subtle" size="sm">
                 Rebuild Tree
-            </Button>
-            <Button @click="showFilters = !showFilters" :variant="hasActiveFilters ? 'solid' : 'subtle'" size="sm">
-                Filters {{ hasActiveFilters ? '(Active)' : '' }}
             </Button>
         </div>
       </div>
       
-      <div class="flex justify-between items-center gap-4">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <!-- Tabs -->
-          <div class="flex gap-6 border-b border-transparent">
+          <div class="flex gap-6 border-b border-transparent w-full md:w-auto overflow-x-auto">
               <button
                 v-for="tab in tabs"
                 :key="tab"
@@ -40,7 +43,7 @@
           </div>
           
           <!-- Search -->
-          <div class="w-64">
+          <div class="w-full md:w-64">
             <Input v-model="searchQuery" placeholder="Search Orders..." @keyup.enter="orders.reload(); orderCounts.reload()" />
           </div>
       </div>
@@ -65,8 +68,8 @@
           <!-- List View -->
           <div v-if="currentView === 'List'" class="bg-white min-h-full">
              <div class="divide-y">
-                 <div v-for="order in orders.data" :key="order.name" class="p-4 hover:bg-gray-50 transition-colors cursor-pointer flex items-center justify-between group">
-                    <div class="flex items-start gap-4">
+                 <div v-for="order in orders.data" :key="order.name" class="p-4 hover:bg-gray-50 transition-colors cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between group gap-4 sm:gap-0">
+                    <div class="flex items-start gap-4 w-full sm:w-auto">
                         <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg">
                             📦
                         </div>
@@ -85,8 +88,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <div class="text-right">
+                    <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                        <div class="text-left sm:text-right">
                             <div class="text-sm font-medium text-gray-700">{{ getChannelName(order.service_category) }}</div>
                             <div class="text-xs text-gray-500 mt-1" v-if="order.channel_partner">{{ getPartnerName(order.channel_partner) }}</div>
                         </div>
@@ -183,9 +186,9 @@
         
         <div class="relative bg-white rounded-xl shadow-xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[90vh]">
             <!-- Modal Header -->
-            <div class="px-6 py-4 border-b flex justify-between items-start bg-gray-50">
-                <div>
-                    <div class="flex items-center gap-3 mb-1">
+            <div class="px-6 py-4 border-b flex flex-col sm:flex-row justify-between items-start bg-gray-50 gap-4 sm:gap-0">
+                <div class="w-full sm:w-auto">
+                    <div class="flex items-center gap-3 mb-1 flex-wrap">
                         <h3 class="text-lg font-bold text-gray-900">{{ activeOrder.name }}</h3>
                         <span :class="['px-2.5 py-0.5 rounded-full text-xs font-medium', getOrderStatusClasses(activeOrder.order_status)]">
                             {{ activeOrder.order_status }}
@@ -203,7 +206,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
                     <Button variant="subtle" size="sm" @click="openCommentForm">
                         <template #prefix>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>

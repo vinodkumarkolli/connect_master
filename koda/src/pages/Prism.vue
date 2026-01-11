@@ -1,29 +1,29 @@
 <template>
-  <div class="flex-1 w-full bg-gray-50 flex flex-col overflow-hidden">
+  <div class="w-full bg-gray-50 flex flex-col">
     
     <!-- Header (Visible when a view is active) -->
-    <div v-if="currentView" class="bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm z-10 flex-shrink-0">
-      <div class="flex items-center gap-4">
-        <button @click="currentView = null" class="p-2 hover:bg-gray-100 rounded-full transition-colors" title="Back to Menu">
+    <div v-if="currentView" class="bg-white border-b px-4 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center shadow-sm z-10 flex-shrink-0 gap-2 sm:gap-0">
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <button @click="currentView = null" class="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0" title="Back to Menu">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         </button>
-        <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 truncate">
           <span v-if="currentView === 'Compass'">🧭 Compass</span>
           <span v-else-if="currentView === 'Punch'">👊 Punch Order</span>
           <span v-else-if="currentView === 'Manage'">✏️ Manage</span>
         </h1>
       </div>
-      <div class="text-sm text-gray-500" v-if="userRoles.data">
-        {{ userRolesList.join(', ') }}
+      <div class="text-xs sm:text-sm text-gray-500 pl-11 sm:pl-0" v-if="userRoles.data">
+        {{ displayRoles.join(', ') }}
       </div>
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1 relative overflow-hidden">
+    <div class="w-full relative">
       
       <!-- Menu (Centered) -->
       <transition name="fade">
-        <div v-if="!currentView" class="absolute inset-0 flex items-center justify-center p-6 bg-gray-50 z-0">
+        <div v-if="!currentView" class="flex items-center justify-center p-6 bg-gray-50 z-0 w-full">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
             
             <!-- Punch Card -->
@@ -70,7 +70,7 @@
 
       <!-- Modules (Full Screen) -->
       <transition name="slide-up">
-        <div v-if="currentView" class="absolute inset-0 bg-gray-50 overflow-hidden flex flex-col p-6 z-10">
+        <div v-if="currentView" class="bg-gray-50 flex flex-col p-6 z-10 w-full">
            
            <!-- Compass View -->
            <CompassView v-if="currentView === 'Compass'" />
@@ -114,6 +114,11 @@ const userRoles = createResource({
 const userRolesList = computed(() => {
     if (!userRoles.data) return []
     return Array.isArray(userRoles.data) ? userRoles.data : (userRoles.data.message || [])
+})
+
+const displayRoles = computed(() => {
+    const allowed = ['Customer', 'Territory Admin', 'Partner Admin', 'System Manager']
+    return userRolesList.value.filter(r => allowed.includes(r))
 })
 
 const isTerritoryAdmin = computed(() => userRolesList.value.includes('Territory Admin'))
