@@ -16,6 +16,7 @@
   "disabled",
   "column_break_opcv",
   "parent_service_territory",
+  "territory_description",
   "section_break_gopg",
   "territory_admins"
  ],
@@ -96,13 +97,18 @@
    "fieldtype": "Table MultiSelect",
    "label": "Territory Admins",
    "options": "Connect Map Users"
+  },
+  {
+   "fieldname": "territory_description",
+   "fieldtype": "Small Text",
+   "label": "Territory Description"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2026-01-06 18:46:54.264962",
+ "modified": "2026-01-12 16:48:19.452397",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Service Territory",

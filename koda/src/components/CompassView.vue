@@ -609,11 +609,16 @@
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Channel Partner</label>
                 <div class="relative">
                     <Autocomplete
-                        v-model="filters.channel_partner"
+                        v-model="tempSelectedPartner"
                         :options="partnerOptions"
                         placeholder="Select Partners"
-                        :multiple="true"
                     />
+                </div>
+                <div class="flex flex-wrap gap-2 mt-2" v-if="filters.channel_partner && filters.channel_partner.length > 0">
+                    <div v-for="pVal in filters.channel_partner" :key="pVal" class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                        {{ getPartnerName(pVal) }}
+                        <button @click="removePartnerFilter(pVal)" class="hover:text-blue-900 font-bold">&times;</button>
+                    </div>
                 </div>
             </div>
             
@@ -634,7 +639,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { Button, Input, LoadingIndicator, createResource, createListResource, Autocomplete, Dialog, frappeRequest } from 'frappe-ui'
 
 const tabs = ['Active', 'Unresolved', 'History']
@@ -906,6 +911,26 @@ function submitDelivery() {
 const channelPartners = reactive({ data: [], loading: false })
 const selectedChannelPartner = ref(null)
 const assigningPartner = ref(false)
+
+const tempSelectedPartner = ref(null)
+
+watch(tempSelectedPartner, (val) => {
+    if (val) {
+        const value = typeof val === 'object' && val !== null && 'value' in val ? val.value : val
+        
+        if (!filters.channel_partner.includes(value)) {
+            filters.channel_partner.push(value)
+        }
+        
+        nextTick(() => {
+            tempSelectedPartner.value = null
+        })
+    }
+})
+
+function removePartnerFilter(val) {
+    filters.channel_partner = filters.channel_partner.filter(p => p !== val)
+}
 
 async function fetchChannelPartners() {
     channelPartners.loading = true
@@ -1343,7 +1368,7 @@ function getOrderStatusClasses(status) {
 
 // Kanban Helpers
 const kanbanStatuses = computed(() => {
-    if (activeTab.value === 'History') return ['Fulfilled', 'Cancelled', 'Rejected']
+    if (activeTab.value === 'History') return ['Fulfilled', 'Cancelled']
     return ['Submitted', 'Assigned', 'Accepted', 'Rejected']
 })
 

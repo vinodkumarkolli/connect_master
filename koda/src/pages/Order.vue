@@ -281,8 +281,13 @@
                         >
                             <div class="font-medium">{{ partner.partner_name }}</div>
                             <div class="text-gray-600 text-sm mt-1" v-if="partner.description">{{ partner.description }}</div>
-                            <div class="text-gray-500 text-xs mt-2" v-if="partner.address_html" v-html="partner.address_html"></div>
-                            <div class="text-gray-500 text-xs mt-1" v-if="partner.contact_html" v-html="partner.contact_html"></div>
+                            <div class="text-gray-500 text-xs mt-2" v-if="partner.address_html">
+                                <span class="font-bold">Address: </span><span v-html="partner.address_html"></span>
+                            </div>
+                            <div class="text-gray-500 text-xs mt-1" v-if="partner.contact_html">
+                                <div class="font-bold">Contact:</div>
+                                <div v-html="partner.contact_html"></div>
+                            </div>
                         </div>
                     </template>
                     <div v-else class="text-center text-gray-500 mb-4">
