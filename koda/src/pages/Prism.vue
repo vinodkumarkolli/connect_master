@@ -41,7 +41,7 @@
 
             <!-- Compass Card -->
             <div
-            v-if="isTerritoryAdmin"
+            v-if="isTerritoryAdmin || isPartnerAdmin"
               @click="currentView = 'Compass'"
               class="bg-white p-10 rounded-3xl shadow-lg hover:shadow-2xl border border-gray-100 cursor-pointer transition-all transform hover:-translate-y-2 flex flex-col items-center text-center group h-80 justify-center"
             >
