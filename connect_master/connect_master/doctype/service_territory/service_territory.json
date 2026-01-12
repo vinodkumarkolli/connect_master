@@ -101,6 +101,7 @@
   {
    "fieldname": "territory_description",
    "fieldtype": "Small Text",
+   "in_list_view": 1,
    "label": "Territory Description"
   }
  ],
@@ -108,7 +109,7 @@
  "index_web_pages_for_search": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2026-01-12 16:48:19.452397",
+ "modified": "2026-01-12 17:21:13.745862",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Service Territory",

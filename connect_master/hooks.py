@@ -246,7 +246,7 @@ fixtures = [
     {"dt": "Custom Field","filters": [["module", "in", ["Connect Master"]]]},
     {"dt": "Custom DocPerm"},
     # Export all Property Setters
-    {"dt": "Service Territory"},
+    # {"dt": "Service Territory"},
     # Export specific Clients Scripts
     {"dt": "Service Channel"},
     # Export specific DocType records
