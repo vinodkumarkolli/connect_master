@@ -1,19 +1,19 @@
 <template>
   <div class="flex flex-col min-h-screen">
     <header class="flex items-center justify-between px-6 py-4 border-b bg-white relative z-50">
-      <div 
-        class="flex items-center text-xl font-bold cursor-pointer group" 
+      <div
+        class="flex items-center text-xl font-bold cursor-pointer group"
         @click="router.push('/')"
       >
         <!-- SVG Logo (The 'K') -->
-        <svg 
-          viewBox="0 0 48 48" 
-          class="w-6 h-6 mr-0.5 transition-transform duration-200 group-hover:scale-110" 
+        <svg
+          viewBox="0 0 48 48"
+          class="w-6 h-6 mr-0.5 transition-transform duration-200 group-hover:scale-110"
           xmlns="www.w3.org"
-          fill="none" 
-          stroke="currentColor" 
-          stroke-width="3.5" 
-          stroke-linecap="round" 
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3.5"
+          stroke-linecap="round"
           stroke-linejoin="round"
         >
           <!-- The outer box -->
@@ -28,7 +28,9 @@
         <!-- Remaining text -->
         <span class="tracking-tight">oda</span>
       </div>
-      <div>
+      <div class="flex items-center gap-6">
+        <a href="#" class="text-sm font-medium text-gray-700 hover:text-gray-900">About us</a>
+        <a href="#" class="text-sm font-medium text-gray-700 hover:text-gray-900">Contact us</a>
         <div v-if="session.data && session.data !== 'Guest'" class="flex items-center gap-2">
           <CustomDropdown :options="userMenuOptions">
             <button class="flex items-center gap-2 focus:outline-none">
@@ -41,9 +43,12 @@
         </div>
       </div>
     </header>
-    <main class="flex flex-col justify-center items-center">
+    <main class="flex-1 flex flex-col justify-center items-center">
       <router-view />
     </main>
+    <footer class="py-4 text-center text-sm text-gray-600 border-t bg-white">
+      &copy; 2026 Sravi Enterprises. All rights reserved
+    </footer>
   </div>
 </template>
 
