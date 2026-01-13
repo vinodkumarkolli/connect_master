@@ -14,8 +14,8 @@
           <div class="space-y-4">
             <p class="text-sm text-gray-700">
               No money transaction is involved when you place order on our application. 
-              This application doesn't collect payments from the customer nor does it pay for the channel partners. 
-              Koda app from Sravi Enterprises is a informative app that aims to bring the customers and vendors closer. 
+              This application doesn't collect payments from the customer nor does it pay for the channel partners. <br />
+              <b>Koda</b> app from Sravi Enterprises is an informative app that aims to bring the customers and vendors closer. 
               We forward orders that you place, to our channel partners and the transaction is carried between you and channel partner.<br/>
               <b>Sravi Enterprises holds no responsibility for this transaction</b><br/>
               We advise user descretion in guaging the authenticity of the channel partners and therby carrying out the transaction
