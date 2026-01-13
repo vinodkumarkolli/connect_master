@@ -32,6 +32,21 @@ const routes = [
     name: 'Prism',
     component: () => import('@/pages/Prism.vue'),
   },
+  {
+    path: '/about',
+    name: 'About',
+    component: () => import('@/pages/About.vue'),
+  },
+  {
+    path: '/contact',
+    name: 'Contact',
+    component: () => import('@/pages/Contact.vue'),
+  },
+  {
+    path: '/terms',
+    name: 'TermsAndConditions',
+    component: () => import('@/pages/TermsAndConditions.vue'),
+  },
 ]
 
 let router = createRouter({
@@ -56,7 +71,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (cachedUser === 'Guest') {
-        if (to.name === 'Home' || to.name === 'Login') {
+        if (to.name === 'Home' || to.name === 'Login' || to.name === 'About' || to.name === 'Contact' || to.name === 'TermsAndConditions') {
             next()
         } else {
             next({ name: 'Home' })

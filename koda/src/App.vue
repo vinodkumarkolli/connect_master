@@ -29,8 +29,21 @@
         <span class="tracking-tight">oda</span>
       </div>
       <div class="flex items-center gap-6">
-        <a href="#" class="text-sm font-medium text-gray-700 hover:text-gray-900">About us</a>
-        <a href="#" class="text-sm font-medium text-gray-700 hover:text-gray-900">Contact us</a>
+        <router-link to="/about" custom v-slot="{ href, navigate }">
+          <div>
+            <a :href="href" @click="navigate" class="text-sm font-medium text-gray-700 hover:text-gray-900">About us</a>
+          </div>
+        </router-link>
+        <router-link to="/contact" custom v-slot="{ href, navigate }">
+          <div>
+            <a :href="href" @click="navigate" class="text-sm font-medium text-gray-700 hover:text-gray-900">Contact us</a>
+          </div>
+        </router-link>
+        <router-link to="/terms" custom v-slot="{ href, navigate }">
+          <div>
+            <a :href="href" @click="navigate" class="text-sm font-medium text-gray-700 hover:text-gray-900">Terms and Conditions</a>
+          </div>
+        </router-link>
         <div v-if="session.data && session.data !== 'Guest'" class="flex items-center gap-2">
           <CustomDropdown :options="userMenuOptions">
             <button class="flex items-center gap-2 focus:outline-none">
@@ -43,10 +56,10 @@
         </div>
       </div>
     </header>
-    <main class="flex-1 flex flex-col justify-center items-center">
+    <main class="flex flex-col justify-center items-center pb-16">
       <router-view />
     </main>
-    <footer class="py-4 text-center text-sm text-gray-600 border-t bg-white">
+    <footer class="fixed bottom-0 w-full py-2 text-center text-sm text-gray-600 border-t bg-white/80 backdrop-blur-md z-50">
       &copy; 2026 Sravi Enterprises. All rights reserved
     </footer>
   </div>
