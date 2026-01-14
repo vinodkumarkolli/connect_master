@@ -28,7 +28,19 @@
         <!-- Remaining text -->
         <span class="tracking-tight">oda</span>
       </div>
-      <div class="flex items-center gap-6">
+      
+      <!-- Hamburger Menu for Mobile -->
+      <div class="md:hidden flex items-center">
+        <button @click="toggleMobileMenu" class="text-gray-700 focus:outline-none">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path :class="{'hidden': isMobileMenuOpen, 'block': !isMobileMenuOpen}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            <path :class="{'block': isMobileMenuOpen, 'hidden': !isMobileMenuOpen}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex items-center gap-6">
         <router-link to="/about" custom v-slot="{ href, navigate }">
           <div>
             <a :href="href" @click="navigate" class="text-sm font-medium text-gray-700 hover:text-gray-900">About us</a>
@@ -55,6 +67,31 @@
           <a href="/koda/login" class="text-sm font-medium text-gray-700 hover:text-gray-900">Login</a>
         </div>
       </div>
+      
+      <!-- Mobile Menu Dropdown -->
+      <div v-show="isMobileMenuOpen" class="md:hidden absolute top-full left-0 right-0 bg-white border-b shadow-lg z-50">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+          <router-link to="/about" custom v-slot="{ href, navigate }">
+            <a :href="href" @click="navigate" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">About us</a>
+          </router-link>
+          <router-link to="/contact" custom v-slot="{ href, navigate }">
+            <a :href="href" @click="navigate" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Contact us</a>
+          </router-link>
+          <router-link to="/terms" custom v-slot="{ href, navigate }">
+            <a :href="href" @click="navigate" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Terms and Conditions</a>
+          </router-link>
+          <div v-if="session.data && session.data !== 'Guest'" class="border-t border-gray-200 pt-2">
+            <div class="flex items-center px-3 py-2">
+              <Avatar :label="session.data" class="mr-2" />
+              <span class="text-sm font-medium text-gray-700">{{ session.data }}</span>
+            </div>
+            <button @click="logout.fetch" class="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Sign out</button>
+          </div>
+          <div v-else class="border-t border-gray-200 pt-2">
+            <a href="/koda/login" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Login</a>
+          </div>
+        </div>
+      </div>
     </header>
     <main class="flex flex-col justify-center items-center pb-16">
       <router-view />
@@ -72,6 +109,7 @@ import { Avatar, createResource, frappeRequest } from 'frappe-ui'
 import CustomDropdown from './components/CustomDropdown.vue'
 
 const router = useRouter()
+const isMobileMenuOpen = ref(false)
 const session = reactive({
   data: 'Guest'
 })
@@ -103,4 +141,8 @@ const userMenuOptions = [
     },
   },
 ]
+
+function toggleMobileMenu() {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
 </script>
