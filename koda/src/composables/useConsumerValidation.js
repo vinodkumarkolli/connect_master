@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { createResource } from 'frappe-ui'
+import { useSession } from './useSession'
 
 export function useConsumerValidation() {
     // UI State
@@ -10,10 +11,7 @@ export function useConsumerValidation() {
     const isBlocking = ref(false)
     const isDefaultAddress = ref(false)
 
-    const session = createResource({
-        url: 'frappe.auth.get_logged_user',
-        auto: true
-    })
+    const session = useSession()
 
     const userRoles = createResource({
         url: 'connect_master.utils.get_user_roles',

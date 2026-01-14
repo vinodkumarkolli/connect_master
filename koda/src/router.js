@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { frappeRequest } from 'frappe-ui'
+import { useSession } from '@/composables/useSession'
 
 const routes = [
   {
@@ -54,15 +55,14 @@ let router = createRouter({
   routes,
 })
 
-let cachedUser = null
 let cachedRoles = null
 
 router.beforeEach(async (to, from, next) => {
+  const session = useSession()
   try {
+    let cachedUser = session.data
     if (!cachedUser) {
-        let res = await frappeRequest({ url: 'frappe.auth.get_logged_user' })
-        cachedUser = res.message || res
-        // console.log('Fetched User:', cachedUser)
+        cachedUser = await session.fetch()
     }
 
     if (to.name === 'Restricted') {

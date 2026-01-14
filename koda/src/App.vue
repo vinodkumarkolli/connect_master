@@ -107,20 +107,14 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Avatar, createResource, frappeRequest } from 'frappe-ui'
 import CustomDropdown from './components/CustomDropdown.vue'
+import { useSession } from './composables/useSession'
 
 const router = useRouter()
 const isMobileMenuOpen = ref(false)
-const session = reactive({
-  data: 'Guest'
-})
+const session = useSession()
 
 onMounted(async () => {
-  try {
-    let res = await frappeRequest({ url: 'frappe.auth.get_logged_user' })
-    if (res) session.data = res.message || res
-  } catch (e) {
-    session.data = 'Guest'
-  }
+  await session.fetch()
 })
 
 const logout = createResource({

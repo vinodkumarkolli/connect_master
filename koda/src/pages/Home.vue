@@ -280,6 +280,8 @@ import { Button, frappeRequest, createResource, createListResource, Alert } from
 import { useRouter } from 'vue-router'
 import Communication from '../components/Communication.vue'
 import { useConsumerValidation } from '../composables/useConsumerValidation'
+import { useSession } from '../composables/useSession'
+
 const router = useRouter()
 const {
     checkAndPrompt,
@@ -290,6 +292,8 @@ const {
     isBlocking,
     isDefaultAddress
 } = useConsumerValidation()
+
+const session = useSession()
 
 const addresses = createResource({
     url: 'frappe.client.get_list',
@@ -522,30 +526,15 @@ async function viewOrderSummary(order) {
     }
 }
 
-const session = createResource({
-    url: 'frappe.auth.get_logged_user',
-    auto: true,
-    async onSuccess(data) {
-        if (data && data !== 'Guest') {
-            await addresses.fetch()
-            contacts.fetch()
-            orders.fetch()
-            checkAndPrompt()
-        }
-    }
-})
-
 onMounted(async () => {
-    // Session is auto-fetched
-    var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-    (function(){
-    var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-    s1.async=true;
-    s1.src='https://embed.tawk.to/696739be48d012197e10aeb3/1jetjj4hf';
-    s1.charset='UTF-8';
-    s1.setAttribute('crossorigin','*');
-    s0.parentNode.insertBefore(s1,s0);
-    })();
+    const data = await session.fetch()
+    if (data && data !== 'Guest') {
+        await addresses.fetch()
+        contacts.fetch()
+        orders.fetch()
+        checkAndPrompt()
+    }
+
 })
 
 async function onCommunicationSuccess() {
