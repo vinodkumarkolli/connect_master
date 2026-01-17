@@ -17,6 +17,7 @@
   "column_break_opcv",
   "parent_service_territory",
   "territory_description",
+  "territory_category",
   "section_break_gopg",
   "territory_admins"
  ],
@@ -103,13 +104,19 @@
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Territory Description"
+  },
+  {
+   "fieldname": "territory_category",
+   "fieldtype": "Select",
+   "label": "Territory Category",
+   "options": "Urban\nSemi-Urban\nRural"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2026-01-12 17:21:13.745862",
+ "modified": "2026-01-17 22:47:24.355579",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Service Territory",
