@@ -2,11 +2,12 @@
 # For license information, please see license.txt
 
 import frappe
+import requests
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from frappe.model.document import Document
-from frappe.utils import now
+from frappe.utils import now, format_datetime
 
 
 class ConnectOrder(Document):
@@ -53,9 +54,8 @@ class ConnectOrder(Document):
 		
 		if admins:
 			self.send_email(admins)
-		else:
-			# Raven alert placeholder (pass for now)
-			pass
+		
+		self.send_telegram_notification()
 
 	def notify_channel_partners(self):
 		if not self.channel_partner:
@@ -144,6 +144,31 @@ class ConnectOrder(Document):
 				
 			except Exception as e:
 				frappe.log_error(f"Failed to send Connect Order notification: {str(e)}")
+
+	def send_telegram_notification(self):
+		bot_token = frappe.conf.get("telegram_bot_token")
+		chat_id = frappe.conf.get("telegram_group_chat_id")
+
+		if not bot_token or not chat_id:
+			return
+
+		message = f"""<b>New Connect Order: {self.name}</b>
+Date: {format_datetime(self.order_date, "medium")}
+Status: {self.order_status}
+Service: {self.service_category}
+Ordered By: {self.user}"""
+
+		url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+		data = {
+			"chat_id": chat_id,
+			"text": message,
+			"parse_mode": "HTML"
+		}
+
+		try:
+			requests.post(url, data=data)
+		except Exception as e:
+			frappe.log_error(f"Failed to send Telegram notification: {str(e)}")
 
 @frappe.whitelist()
 def add_timeline_event(order_name, event_type, payload):
