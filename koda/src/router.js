@@ -48,6 +48,11 @@ const routes = [
     name: 'TermsAndConditions',
     component: () => import('@/pages/TermsAndConditions.vue'),
   },
+  {
+    path: '/sasb',
+    name: 'Sasb',
+    component: () => import('@/pages/Sasb.vue'),
+  },
 ]
 
 let router = createRouter({
@@ -71,7 +76,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (cachedUser === 'Guest') {
-        if (to.name === 'Home' || to.name === 'Login' || to.name === 'About' || to.name === 'Contact' || to.name === 'TermsAndConditions') {
+        if (to.name === 'Home' || to.name === 'Login' || to.name === 'About' || to.name === 'Contact' || to.name === 'TermsAndConditions' || to.name === 'Sasb') {
             next()
         } else {
             next({ name: 'Home' })

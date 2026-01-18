@@ -7,13 +7,27 @@
     <div v-else-if="!session.data || session.data === 'Guest'">
       <!-- Step 1: Welcome -->
       <div class="text-center space-y-6 py-12 md:py-20 bg-white p-4 md:p-6 rounded-lg shadow border border-gray-100">
-        <h1 class="text-5xl font-bold text-gray-900">Koda</h1>
+        <h1 class="text-5xl font-bold text-gray-900 flex items-center justify-center">
+            <span v-if="displayedText.length > 0" class="mr-1">
+                <svg viewBox="0 0 48 48" class="w-12 h-12" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M40.5,5.5H7.5a2,2,0,0,0-2,2v33a2,2,0,0,0,2,2h33a2,2,0,0,0,2-2V7.5A2,2,0,0,0,40.5,5.5Z"/>
+                  <line x1="17.31" y1="10.54" x2="17.31" y2="37.42"/>
+                  <line x1="20.78" y1="23.98" x2="30.69" y2="10.63"/>
+                  <line x1="20.78" y1="23.98" x2="30.69" y2="37.46"/>
+                  <line x1="20.78" y1="23.98" x2="17.31" y2="23.98"/>
+                </svg>
+            </span>
+            <span>{{ displayedText.slice(1) }}</span><span class="animate-pulse text-blue-600">|</span>
+        </h1>
         <p class="text-xl text-gray-600 max-w-2xl mx-auto">
           We make buying of Sastry Balm easy by connecting you with local vendors/distributors/wholesalers
         </p>
-        <div class="pt-8">
+        <div class="pt-8 flex justify-center gap-4">
           <Button :appearance="'primary'" size="xl" @click="startOrdering">
             Start Ordering
+          </Button>
+          <Button size="xl" @click="goToSasb">
+            Sastry Balm
           </Button>
         </div>
       </div>
@@ -295,6 +309,9 @@ const {
 
 const session = useSession()
 
+const displayedText = ref('')
+const fullText = 'Koda'
+
 const addresses = createResource({
     url: 'frappe.client.get_list',
     makeParams(values) {
@@ -527,6 +544,16 @@ async function viewOrderSummary(order) {
 }
 
 onMounted(async () => {
+    let i = 0
+    const interval = setInterval(() => {
+        if (i < fullText.length) {
+            displayedText.value += fullText.charAt(i)
+            i++
+        } else {
+            clearInterval(interval)
+        }
+    }, 300)
+
     const data = await session.fetch()
     if (data && data !== 'Guest') {
         await addresses.fetch()
@@ -545,6 +572,10 @@ async function onCommunicationSuccess() {
 
 function startOrdering() {
     window.location.href = '/koda/login'
+}
+
+function goToSasb() {
+    router.push('/sasb')
 }
 
 function createOrder() {

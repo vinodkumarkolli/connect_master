@@ -7,7 +7,7 @@
         <section class="mb-8">
           <h2 class="text-2xl font-semibold text-gray-800 mb-4">Partner With Us</h2>
           <p class="text-gray-600 leading-relaxed">
-            Whether you are a retailer looking to stock a household favorite or a business interested in joining our growing network of distributors, we are ready to connect.
+            Whether you are a retailer looking to stock Sastry Balm or a business interested in joining our growing network of distributors, we are ready to connect.
           </p>
         </section>
 
