@@ -212,6 +212,13 @@
             </div>
 
             <div class="mt-8 pt-4 border-t">
+                <div v-if="canSubmit" class="mb-4">
+                    <Input
+                        label="Agent Code"
+                        v-model="agentCode"
+                        placeholder="Enter Agent Code (Optional)"
+                    />
+                </div>
                 <Button
                     v-if="canSubmit"
                     appearance="primary"
@@ -405,6 +412,7 @@ const customPartnerDescription = ref('')
 const showSuccessDialog = ref(false)
 const showErrorDialog = ref(false)
 const errorMessage = ref('')
+const agentCode = ref('')
 
 function showError(msg) {
     errorMessage.value = msg
@@ -497,6 +505,7 @@ const createOrder = createResource({
             order_status: (selectedChannelPartner.value && selectedChannelPartner.value !== 'custom') ? 'Assigned' : 'Submitted',
             channel_partner: (selectedChannelPartner.value && selectedChannelPartner.value !== 'custom') ? selectedChannelPartner.value : undefined,
             order_notes: selectedChannelPartner.value === 'custom' ? customPartnerDescription.value : undefined,
+            agent_code: agentCode.value || undefined,
             docstatus: 1,
             items: lineItems
         }
@@ -842,6 +851,7 @@ function resetOrder() {
     resolvedTerritory.value = null
     selectedChannelPartner.value = null
     customPartnerDescription.value = ''
+    agentCode.value = ''
 }
 
 // Watchers
@@ -878,4 +888,3 @@ async function onCommunicationSuccess(data) {
 }
 
 </script>
-

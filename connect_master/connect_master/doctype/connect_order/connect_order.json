@@ -19,6 +19,7 @@
   "address_html",
   "contact",
   "contact_html",
+  "agent_code",
   "section_break_ajxs",
   "items",
   "section_break_ikwc",
@@ -155,13 +156,18 @@
    "fieldtype": "Check",
    "label": "Unresolved Push",
    "read_only_depends_on": "eval:doc.order_status === 'Fulfilled' || doc.order_status === 'Cancelled'"
+  },
+  {
+   "fieldname": "agent_code",
+   "fieldtype": "Data",
+   "label": "Agent Code"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-08 23:03:44.483543",
+ "modified": "2026-01-30 20:38:27.869603",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Order",
