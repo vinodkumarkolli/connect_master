@@ -567,7 +567,7 @@ const totalAmount = computed(() => {
     }, 0)
 })
 
-const hasItemsInCart = computed(() => totalAmount.value > 0)
+const hasItemsInCart = computed(() => Object.values(cart).reduce((sum, qty) => sum + (qty || 0), 0) > 0)
 
 const createOrder = createResource({
     url: 'frappe.client.insert',
