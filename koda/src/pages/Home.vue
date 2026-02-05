@@ -140,6 +140,27 @@
         <div v-else class="text-center text-gray-500 py-20 border-2 border-dashed border-gray-200 rounded-lg">
             No orders found.
         </div>
+
+        <!-- Pagination -->
+        <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4" v-if="totalOrders > 0 && !orders.loading">
+            <div class="text-sm text-gray-500">
+                Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, totalOrders) }} of {{ totalOrders }} orders
+            </div>
+            <div class="flex items-center gap-2">
+                <Button :disabled="currentPage === 1" @click="currentPage--" size="sm" variant="outline">Previous</Button>
+                <div class="flex items-center gap-1">
+                    <button 
+                        v-for="page in visiblePages" 
+                        :key="page"
+                        @click="currentPage = page"
+                        :class="['w-8 h-8 rounded flex items-center justify-center text-sm font-medium transition-colors', currentPage === page ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100 text-gray-600']"
+                    >
+                        {{ page }}
+                    </button>
+                </div>
+                <Button :disabled="currentPage === totalPages" @click="currentPage++" size="sm" variant="outline">Next</Button>
+            </div>
+        </div>
       </div>
     </div>
 
@@ -289,7 +310,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { Button, frappeRequest, createResource, createListResource, Alert } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import Communication from '../components/Communication.vue'
@@ -336,6 +357,26 @@ const contacts = createResource({
     auto: false
 })
 
+const currentPage = ref(1)
+const itemsPerPage = ref(5)
+
+const ordersCount = createResource({
+    url: 'frappe.client.get_list',
+    makeParams(values) {
+        const addressNames = addresses.data?.map(a => a.name) || []
+        return {
+            doctype: 'Connect Order',
+            fields: ['name'],
+            filters: {
+                delivery_address: ['in', addressNames.length ? addressNames : ['']]
+            },
+            limit_page_length: 0
+        }
+    },
+    auto: false,
+    transform: (data) => data.length
+})
+
 const orders = createResource({
     url: 'frappe.client.get_list',
     makeParams(values) {
@@ -346,10 +387,41 @@ const orders = createResource({
             filters: {
                 delivery_address: ['in', addressNames.length ? addressNames : ['']]
             },
-            order_by: 'order_date desc'
+            order_by: 'order_date desc',
+            limit_start: (currentPage.value - 1) * itemsPerPage.value,
+            limit_page_length: itemsPerPage.value
         }
     },
     auto: false
+})
+
+watch(currentPage, () => {
+    orders.fetch()
+})
+
+const totalOrders = computed(() => {
+    return ordersCount.data || 0
+})
+
+const totalPages = computed(() => {
+    return Math.ceil(totalOrders.value / itemsPerPage.value)
+})
+
+const visiblePages = computed(() => {
+    const pages = []
+    const total = totalPages.value
+    const current = currentPage.value
+    
+    let end = Math.max(5, current)
+    if (end > total) end = total
+    
+    let start = end - 4
+    if (start < 1) start = 1
+    
+    for (let i = start; i <= end; i++) {
+        pages.push(i)
+    }
+    return pages
 })
 
 const orderQuantities = reactive({})
@@ -558,6 +630,7 @@ onMounted(async () => {
     if (data && data !== 'Guest') {
         await addresses.fetch()
         contacts.fetch()
+        ordersCount.fetch()
         orders.fetch()
         checkAndPrompt()
     }
