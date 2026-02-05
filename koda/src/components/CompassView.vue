@@ -57,7 +57,7 @@
       <div v-else-if="orders.error" class="p-12 text-center text-red-500">
         {{ orders.error.message || 'Error loading orders' }}
         <div class="mt-2">
-            <Button size="sm" @click="orders.reload()">Retry</Button>
+            <Button size="sm" @click="refreshView()">Retry</Button>
         </div>
       </div>
       <div v-else-if="!orders.data || orders.data.length === 0" class="p-12 text-center text-gray-500">
@@ -144,6 +144,11 @@
                               </div>
                           </div>
                       </div>
+                      <div v-if="kanbanHasMore[status]" class="text-center pt-2 pb-2">
+                          <Button size="sm" variant="subtle" @click="fetchKanbanOrders(status)" :loading="kanbanLoading[status]">
+                              ...
+                          </Button>
+                      </div>
                   </div>
               </div>
           </div>
@@ -195,7 +200,7 @@
     </div>
 
     <!-- Pagination -->
-    <div class="p-4 border-t bg-white flex flex-col sm:flex-row items-center justify-between gap-4 flex-shrink-0" v-if="totalOrders > 0">
+    <div class="p-4 border-t bg-white flex flex-col sm:flex-row items-center justify-between gap-4 flex-shrink-0" v-if="totalOrders > 0 && currentView !== 'Kanban'">
         <div class="text-sm text-gray-500">
             Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, totalOrders) }} of {{ totalOrders }} orders
         </div>
@@ -651,7 +656,7 @@
                 </select>
             </div>
         </div>
-        <div class="p-4 border-t bg-gray-50 flex gap-3">
+        <div class="p-4 pb-20 border-t bg-gray-50 flex gap-3">
             <Button class="flex-1" variant="subtle" @click="clearFilters">Clear All</Button>
             <Button class="flex-1" appearance="primary" @click="applyFilters">Apply Filters</Button>
         </div>
@@ -670,7 +675,7 @@ const currentView = ref('List')
 const showFilters = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
-const itemsPerPage = ref(10)
+const itemsPerPage = ref(5)
 
 
 const isTerritoryAdmin = computed(() => {
@@ -1449,9 +1454,91 @@ const kanbanStatuses = computed(() => {
     return ['Submitted', 'Assigned', 'Accepted', 'Rejected']
 })
 
+const kanbanData = reactive({})
+const kanbanOffsets = reactive({})
+const kanbanLoading = reactive({})
+const kanbanHasMore = reactive({})
+const KANBAN_PAGE_SIZE = 10
+
+async function fetchKanbanOrders(status, reset = false) {
+    if (reset) {
+        kanbanData[status] = []
+        kanbanOffsets[status] = 0
+        kanbanHasMore[status] = true
+    }
+    
+    if (!kanbanHasMore[status] || kanbanLoading[status]) return
+
+    kanbanLoading[status] = true
+    
+    try {
+        const currentFilters = { ...filters, order_status: status }
+        
+        const res = await frappeRequest({
+            url: 'connect_master.api.get_compass_orders',
+            params: {
+                tab: activeTab.value,
+                filters: JSON.stringify(currentFilters),
+                search: searchQuery.value,
+                start: kanbanOffsets[status],
+                page_len: KANBAN_PAGE_SIZE
+            }
+        })
+        
+        const newOrders = res.message || res || []
+        
+        if (newOrders.length < KANBAN_PAGE_SIZE) {
+            kanbanHasMore[status] = false
+        }
+        
+        if (reset) {
+            kanbanData[status] = newOrders
+        } else {
+            kanbanData[status] = [...(kanbanData[status] || []), ...newOrders]
+        }
+        
+        kanbanOffsets[status] += newOrders.length
+        
+    } catch (e) {
+        console.error(e)
+    } finally {
+        kanbanLoading[status] = false
+    }
+}
+
+watch(currentView, (newView) => {
+    if (newView === 'Kanban') {
+        kanbanStatuses.value.forEach(status => {
+            fetchKanbanOrders(status, true)
+        })
+    }
+})
+
+watch([activeTab, searchQuery, filters], () => {
+    if (currentView.value === 'Kanban') {
+        kanbanStatuses.value.forEach(status => {
+            fetchKanbanOrders(status, true)
+        })
+    }
+}, { deep: true })
+
 function getOrdersByStatus(status) {
+    if (currentView.value === 'Kanban') {
+        return kanbanData[status] || []
+    }
     if (!orders.data) return []
     return orders.data.filter(o => o.order_status === status)
+}
+
+function refreshView() {
+    orderCounts.reload()
+    if (currentView.value === 'Kanban') {
+        kanbanStatuses.value.forEach(status => {
+            fetchKanbanOrders(status, true)
+        })
+    } else {
+        orders.reload()
+    }
 }
 
 function toggleKanbanMenu(status) {
