@@ -51,7 +51,7 @@
 
     <!-- Main Content -->
     <div :class="['flex-1 p-0 relative bg-gray-50', currentView === 'Kanban' ? 'overflow-hidden' : 'overflow-y-auto']">
-      <div v-if="orders.loading" class="flex justify-center p-12">
+      <div v-if="orders.loading" class="flex justify-center items-center h-full">
         <LoadingIndicator />
       </div>
       <div v-else-if="orders.error" class="p-12 text-center text-red-500">
@@ -192,6 +192,29 @@
               </div>
           </div>
       </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="p-4 border-t bg-white flex flex-col sm:flex-row items-center justify-between gap-4 flex-shrink-0" v-if="totalOrders > 0">
+        <div class="text-sm text-gray-500">
+            Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, totalOrders) }} of {{ totalOrders }} orders
+        </div>
+        <div class="flex items-center gap-2">
+            <Button :disabled="currentPage === 1" @click="currentPage--" size="sm" variant="outline">Previous</Button>
+            <div class="flex items-center gap-1">
+                <template v-for="(page, idx) in visiblePages" :key="idx">
+                    <span v-if="page === '...'" class="px-2 text-gray-400">...</span>
+                    <button 
+                        v-else
+                        @click="currentPage = page"
+                        :class="['w-8 h-8 rounded flex items-center justify-center text-sm font-medium transition-colors', currentPage === page ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100 text-gray-600']"
+                    >
+                        {{ page }}
+                    </button>
+                </template>
+            </div>
+            <Button :disabled="currentPage === totalPages" @click="currentPage++" size="sm" variant="outline">Next</Button>
+        </div>
     </div>
     
     <!-- Action Menu Modal -->
@@ -648,6 +671,8 @@ const initialTabSet = ref(false)
 const currentView = ref('List')
 const showFilters = ref(false)
 const searchQuery = ref('')
+const currentPage = ref(1)
+const itemsPerPage = ref(10)
 
 
 const isTerritoryAdmin = computed(() => {
@@ -1114,7 +1139,9 @@ const orders = createResource({
         return {
             tab: activeTab.value,
             filters: JSON.stringify(filters),
-            search: searchQuery.value
+            search: searchQuery.value,
+            start: (currentPage.value - 1) * itemsPerPage.value,
+            page_len: itemsPerPage.value
         }
     }
 })
@@ -1124,7 +1151,48 @@ const orders = createResource({
 //     orders.reload()
 // })
 
+const totalOrders = computed(() => {
+    if (!orderCounts.data) return 0
+    return orderCounts.data[activeTab.value] || 0
+})
+
+const totalPages = computed(() => {
+    return Math.ceil(totalOrders.value / itemsPerPage.value)
+})
+
+const visiblePages = computed(() => {
+    const pages = []
+    const total = totalPages.value
+    const current = currentPage.value
+    
+    if (total <= 7) {
+        for (let i = 1; i <= total; i++) pages.push(i)
+    } else {
+        if (current <= 4) {
+            for (let i = 1; i <= 5; i++) pages.push(i)
+            pages.push('...')
+            pages.push(total)
+        } else if (current >= total - 3) {
+            pages.push(1)
+            pages.push('...')
+            for (let i = total - 4; i <= total; i++) pages.push(i)
+        } else {
+            pages.push(1)
+            pages.push('...')
+            for (let i = current - 1; i <= current + 1; i++) pages.push(i)
+            pages.push('...')
+            pages.push(total)
+        }
+    }
+    return pages
+})
+
+watch([activeTab, searchQuery], () => {
+    currentPage.value = 1
+})
+
 function applyFilters() {
+    currentPage.value = 1
     orders.reload()
     orderCounts.reload()
     showFilters.value = false
