@@ -593,10 +593,10 @@
     </Dialog>
 
     <!-- Overlay for filters -->
-    <div v-if="showFilters" class="absolute inset-0 bg-black bg-opacity-20 z-10" @click="showFilters = false"></div>
+    <div v-if="showFilters" class="fixed inset-0 bg-black bg-opacity-20 z-40" @click="showFilters = false"></div>
 
     <!-- Filter Sidebar -->
-    <div v-if="showFilters" class="absolute inset-y-0 right-0 w-80 bg-white shadow-2xl border-l z-20 flex flex-col transform transition-transform duration-300 ease-in-out">
+    <div v-if="showFilters" class="fixed inset-y-0 right-0 w-full md:w-80 bg-white shadow-2xl border-l z-50 flex flex-col transform transition-transform duration-300 ease-in-out">
         <div class="p-4 border-b flex justify-between items-center bg-gray-50">
             <h3 class="font-bold text-gray-800">Filters</h3>
             <button @click="showFilters = false" class="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
