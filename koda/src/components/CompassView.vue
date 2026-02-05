@@ -32,7 +32,7 @@
               <button
                 v-for="tab in tabs"
                 :key="tab"
-                @click="activeTab = tab; orders.reload()"
+                @click="changeTab(tab)"
                 :class="['pb-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2', activeTab === tab ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700']"
               >
                 {{ tab }}
@@ -44,7 +44,7 @@
           
           <!-- Search -->
           <div class="w-full md:w-64">
-            <Input v-model="searchQuery" placeholder="Search Orders..." @keyup.enter="orders.reload(); orderCounts.reload()" />
+            <Input v-model="searchQuery" placeholder="Search Orders..." @keyup.enter="handleSearch" />
           </div>
       </div>
     </div>
@@ -202,16 +202,14 @@
         <div class="flex items-center gap-2">
             <Button :disabled="currentPage === 1" @click="currentPage--" size="sm" variant="outline">Previous</Button>
             <div class="flex items-center gap-1">
-                <template v-for="(page, idx) in visiblePages" :key="idx">
-                    <span v-if="page === '...'" class="px-2 text-gray-400">...</span>
-                    <button 
-                        v-else
-                        @click="currentPage = page"
-                        :class="['w-8 h-8 rounded flex items-center justify-center text-sm font-medium transition-colors', currentPage === page ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100 text-gray-600']"
-                    >
-                        {{ page }}
-                    </button>
-                </template>
+                <button 
+                    v-for="page in visiblePages" 
+                    :key="page"
+                    @click="currentPage = page"
+                    :class="['w-8 h-8 rounded flex items-center justify-center text-sm font-medium transition-colors', currentPage === page ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100 text-gray-600']"
+                >
+                    {{ page }}
+                </button>
             </div>
             <Button :disabled="currentPage === totalPages" @click="currentPage++" size="sm" variant="outline">Next</Button>
         </div>
@@ -1165,35 +1163,46 @@ const visiblePages = computed(() => {
     const total = totalPages.value
     const current = currentPage.value
     
-    if (total <= 7) {
-        for (let i = 1; i <= total; i++) pages.push(i)
-    } else {
-        if (current <= 4) {
-            for (let i = 1; i <= 5; i++) pages.push(i)
-            pages.push('...')
-            pages.push(total)
-        } else if (current >= total - 3) {
-            pages.push(1)
-            pages.push('...')
-            for (let i = total - 4; i <= total; i++) pages.push(i)
-        } else {
-            pages.push(1)
-            pages.push('...')
-            for (let i = current - 1; i <= current + 1; i++) pages.push(i)
-            pages.push('...')
-            pages.push(total)
-        }
+    let end = Math.max(5, current)
+    if (end > total) end = total
+    
+    let start = end - 4
+    if (start < 1) start = 1
+    
+    for (let i = start; i <= end; i++) {
+        pages.push(i)
     }
     return pages
 })
 
-watch([activeTab, searchQuery], () => {
-    currentPage.value = 1
+watch(currentPage, () => {
+    orders.reload()
 })
 
+function changeTab(tab) {
+    activeTab.value = tab
+    if (currentPage.value === 1) {
+        orders.reload()
+    } else {
+        currentPage.value = 1
+    }
+}
+
+function handleSearch() {
+    if (currentPage.value === 1) {
+        orders.reload()
+    } else {
+        currentPage.value = 1
+    }
+    orderCounts.reload()
+}
+
 function applyFilters() {
-    currentPage.value = 1
-    orders.reload()
+    if (currentPage.value === 1) {
+        orders.reload()
+    } else {
+        currentPage.value = 1
+    }
     orderCounts.reload()
     showFilters.value = false
 }
