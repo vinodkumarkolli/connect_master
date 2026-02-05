@@ -14,16 +14,34 @@
                 <button @click="currentView = 'Kanban'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', currentView === 'Kanban' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">Kanban</button>
                 <button @click="currentView = 'Summary'" :class="['px-3 py-1 rounded text-xs font-medium transition-all', currentView === 'Summary' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-800']">Summary</button>
             </div>
-            <Button @click="showFilters = !showFilters" :variant="hasActiveFilters ? 'solid' : 'outline'" size="sm">
+            <Button @click="openFilterSidebar" :variant="hasActiveFilters ? 'solid' : 'outline'" size="sm">
                 <template #prefix>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 </template>
-                Filters {{ hasActiveFilters ? '(Active)' : '' }}
+                Filters
+            </Button>
+            <Button @click="openDownloadSidebar" variant="outline" size="sm">
+                <template #prefix>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </template>
+                Download
             </Button>
             <Button v-if="isSystemManager" @click="rebuildTree" :loading="treeRebuildResource.loading" variant="subtle" size="sm">
                 Rebuild Tree
             </Button>
         </div>
+      </div>
+      
+      <div v-if="activeFilterBadges.length > 0" class="flex flex-wrap gap-2 mb-2">
+          <div 
+            v-for="badge in activeFilterBadges" 
+            :key="badge.key" 
+            class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-blue-200 transition-colors"
+            @click="openFilterSidebar"
+          >
+              <span class="font-medium">{{ badge.label }}:</span> {{ badge.value }}
+          </div>
+
       </div>
       
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -115,10 +133,7 @@
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                           </button>
                           <div v-if="activeKanbanMenu === status" class="absolute right-0 top-full mt-1 w-40 bg-white rounded-md shadow-lg border z-20 py-1">
-                              <button @click="downloadKanbanCsv(status); activeKanbanMenu = null" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                  Download CSV
-                              </button>
+
                           </div>
                       </div>
                   </div>
@@ -603,11 +618,26 @@
     <!-- Filter Sidebar -->
     <div v-if="showFilters" class="fixed inset-y-0 right-0 w-full md:w-80 bg-white shadow-2xl border-l z-50 flex flex-col transform transition-transform duration-300 ease-in-out">
         <div class="p-4 border-b flex justify-between items-center bg-gray-50">
-            <h3 class="font-bold text-gray-800">Filters</h3>
+            <h3 class="font-bold text-gray-800">{{ isDownloadMode ? 'Download' : 'Filters' }}</h3>
             <button @click="showFilters = false" class="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
         </div>
         <div class="flex-1 overflow-y-auto p-5 space-y-6">
             <!-- Filter Fields -->
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Date Range</label>
+                <div class="flex gap-2">
+                    <div class="w-1/2">
+                        <label class="block text-[10px] text-gray-400 mb-1">From <span v-if="isDownloadMode" class="text-red-500">*</span></label>
+                        <Input type="date" v-model="filters.from_date" />
+                    </div>
+                    <div class="w-1/2">
+                        <label class="block text-[10px] text-gray-400 mb-1">To <span v-if="isDownloadMode" class="text-red-500">*</span></label>
+                        <Input type="date" v-model="filters.to_date" />
+                    </div>
+                </div>
+                <div v-if="dateRangeError" class="text-red-500 text-xs mt-1">{{ dateRangeError }}</div>
+            </div>
+
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Service Category</label>
                 <select v-model="filters.custom_address_category" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
@@ -657,8 +687,13 @@
             </div>
         </div>
         <div class="p-4 pb-20 border-t bg-gray-50 flex gap-3">
-            <Button class="flex-1" variant="subtle" @click="clearFilters">Clear All</Button>
-            <Button class="flex-1" appearance="primary" @click="applyFilters">Apply Filters</Button>
+            <template v-if="isDownloadMode">
+                <Button class="w-full" appearance="primary" @click="handleDownload" :disabled="!isDownloadDateValid" :loading="downloadCsvResource.loading">Download</Button>
+            </template>
+            <template v-else>
+
+                <Button class="flex-1" appearance="primary" @click="applyFilters" :disabled="!!dateRangeError">Apply Filters</Button>
+            </template>
         </div>
     </div>
   </div>
@@ -673,6 +708,119 @@ const activeTab = ref('Active')
 const initialTabSet = ref(false)
 const currentView = ref('List')
 const showFilters = ref(false)
+const isDownloadMode = ref(false)
+
+function getToday() {
+    const date = new Date()
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
+function getFirstDayOfMonth() {
+    const date = new Date()
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    return `${year}-${month}-01`
+}
+
+const filters = reactive({
+    custom_address_category: '',
+    custom_resolved_territory: '',
+    include_child_territories: false,
+    channel_partner: [],
+    order_status: '',
+    from_date: getFirstDayOfMonth(),
+    to_date: getToday()
+})
+
+const dateRangeError = computed(() => {
+    if (!filters.from_date || !filters.to_date) return 'Date range is required'
+    const start = new Date(filters.from_date)
+    const end = new Date(filters.to_date)
+    const diffTime = end - start
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays < 0) return 'To Date must be after From Date'
+    if (diffDays > 30) return 'Date range cannot exceed 30 days'
+    return null
+})
+
+function openFilterSidebar() {
+    isDownloadMode.value = false
+    showFilters.value = true
+}
+
+function openDownloadSidebar() {
+    isDownloadMode.value = true
+    // Default dates: Today - 7 days to Today
+    const today = new Date()
+    const lastWeek = new Date(today)
+    lastWeek.setDate(today.getDate() - 7)
+    
+    filters.to_date = getToday()
+    
+    const lwYear = lastWeek.getFullYear()
+    const lwMonth = String(lastWeek.getMonth() + 1).padStart(2, '0')
+    const lwDay = String(lastWeek.getDate()).padStart(2, '0')
+    filters.from_date = `${lwYear}-${lwMonth}-${lwDay}`
+    
+    showFilters.value = true
+}
+
+const isDownloadDateValid = computed(() => !dateRangeError.value)
+
+const activeFilterBadges = computed(() => {
+    const badges = []
+    if (filters.from_date && filters.to_date) {
+        badges.push({ 
+            label: 'Date', 
+            value: `${filters.from_date} to ${filters.to_date}`, 
+            key: 'date',
+            type: 'date'
+        })
+    }
+    if (filters.custom_address_category) {
+        badges.push({
+            label: 'Category',
+            value: getChannelName(filters.custom_address_category),
+            key: 'category',
+            type: 'category'
+        })
+    }
+    if (filters.custom_resolved_territory) {
+        const t = territories.data?.find(x => x.name === filters.custom_resolved_territory)
+        badges.push({
+            label: 'Territory',
+            value: t ? t.territory_name : filters.custom_resolved_territory,
+            key: 'territory',
+            type: 'territory'
+        })
+    }
+    if (filters.channel_partner && filters.channel_partner.length > 0) {
+        filters.channel_partner.forEach(p => {
+            badges.push({
+                label: 'Partner',
+                value: getPartnerName(p),
+                key: `partner-${p}`,
+                type: 'partner',
+                id: p
+            })
+        })
+    }
+    if (filters.order_status) {
+        badges.push({
+            label: 'Status',
+            value: filters.order_status,
+            key: 'status',
+            type: 'status'
+        })
+    }
+    return badges
+})
+
+
 const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = ref(5)
@@ -1060,14 +1208,6 @@ function toggleVisibility(eventName) {
     })
 }
 
-const filters = reactive({
-    custom_address_category: '',
-    custom_resolved_territory: '',
-    include_child_territories: false,
-    channel_partner: [],
-    order_status: ''
-})
-
 const allStatuses = ['Submitted', 'Assigned', 'Accepted', 'Rejected', 'Cancelled', 'Fulfilled']
 const partnerAdminStatuses = ['Assigned', 'Accepted', 'Rejected', 'Cancelled', 'Fulfilled']
 
@@ -1212,14 +1352,7 @@ function applyFilters() {
     showFilters.value = false
 }
 
-function clearFilters() {
-    filters.custom_address_category = ''
-    filters.custom_resolved_territory = ''
-    filters.include_child_territories = false
-    filters.channel_partner = []
-    filters.order_status = ''
-    applyFilters()
-}
+
 
 const treeRebuildResource = createResource({
     url: 'connect_master.api.rebuild_service_territory_tree'
@@ -1239,7 +1372,9 @@ const hasActiveFilters = computed(() => {
     return filters.custom_address_category || 
            filters.custom_resolved_territory || 
            (filters.channel_partner && filters.channel_partner.length > 0) || 
-           filters.order_status
+           filters.order_status ||
+           filters.from_date ||
+           filters.to_date
 })
 
 // Helper Resources
@@ -1407,6 +1542,11 @@ function getChannelName(name) {
     return c ? c.channel_name : name
 }
 
+function getTerritoryName(name) {
+    const t = territories.data?.find(x => x.name === name)
+    return t ? t.territory_name : name
+}
+
 function getPartnerName(name) {
     const p = partners.data?.find(x => x.name === name)
     return p ? p.partner_name : name
@@ -1553,15 +1693,22 @@ const downloadCsvResource = createResource({
     url: 'connect_master.api.download_orders_csv'
 })
 
-function downloadKanbanCsv(status) {
+function handleDownload() {
+    const payloadFilters = { ...filters }
+    if (payloadFilters.from_date) {
+        payloadFilters.from_date = payloadFilters.from_date + ' 00:00:01'
+    }
+    
     downloadCsvResource.submit({
-        tab: activeTab.value,
-        filters: JSON.stringify(filters),
+        filters: JSON.stringify(payloadFilters),
         search: searchQuery.value,
-        status: status
+        status: null
     }, {
         onSuccess: (data) => {
-            if (!data || data.length === 0) return
+            if (!data || data.length === 0) {
+                alert('No orders found for the selected criteria.')
+                return
+            }
             
             const csvContent = data.map(row =>
                 row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')
@@ -1572,12 +1719,17 @@ function downloadKanbanCsv(status) {
             if (link.download !== undefined) {
                 const url = URL.createObjectURL(blob)
                 link.setAttribute('href', url)
-                link.setAttribute('download', `${status}_orders.csv`)
+                link.setAttribute('download', `orders_export.csv`)
                 link.style.visibility = 'hidden'
                 document.body.appendChild(link)
                 link.click()
                 document.body.removeChild(link)
             }
+            showFilters.value = false
+        },
+        onError: (err) => {
+            console.error(err)
+            alert('Failed to download orders. Please try again.')
         }
     })
 }

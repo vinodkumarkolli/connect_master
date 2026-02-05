@@ -81,6 +81,14 @@ def _get_list_conditions(filters, search):
     if filters.get('order_status'):
         conditions.append("co.order_status = %(order_status)s")
         values['order_status'] = filters['order_status']
+
+    if filters.get('from_date'):
+        conditions.append("co.order_date >= %(from_date)s")
+        values['from_date'] = filters['from_date']
+
+    if filters.get('to_date'):
+        conditions.append("co.order_date <= %(to_date)s")
+        values['to_date'] = filters['to_date'] + " 23:59:59"
         
     if filters.get('custom_resolved_territory'):
         territory = filters['custom_resolved_territory']
@@ -1089,21 +1097,11 @@ def cancel_order(order_name, notes):
     return "Order Cancelled Successfully"
 
 @frappe.whitelist()
-def download_orders_csv(tab, filters=None, search=None, status=None):
+def download_orders_csv(filters=None, search=None, status=None):
     conditions, values = _get_list_conditions(filters, search)
     if conditions is None:
         return []
 
-    # Tab Logic (copied from get_compass_orders)
-    if tab == 'Active':
-        conditions.append("co.unresolved_push = 0")
-        conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
-    elif tab == 'Unresolved':
-        conditions.append("co.unresolved_push = 1")
-        conditions.append("co.order_status NOT IN ('Fulfilled', 'Cancelled')")
-    elif tab == 'History':
-        conditions.append("co.order_status IN ('Fulfilled', 'Cancelled')")
-        
     if status:
         conditions.append("co.order_status = %(status)s")
         values['status'] = status
