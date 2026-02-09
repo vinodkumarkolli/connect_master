@@ -236,7 +236,7 @@
     </div>
     
     <!-- Action Menu Modal -->
-    <div v-if="activeMenuOrderId && activeOrder" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <div v-if="activeMenuOrderId && activeOrder" class="fixed inset-0 z-20 flex items-center justify-center p-4 sm:p-6">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" @click="closeMenu"></div>
         
         <div class="relative bg-white rounded-xl shadow-xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[90vh]">
@@ -262,13 +262,16 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    <Button variant="subtle" size="sm" @click="openCommentForm">
+                    <Button v-if="!hasActiveChildDialog" variant="subtle" size="sm" @click="openCommentForm">
                         <template #prefix>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                         </template>
                         Add Comment
                     </Button>
-                    <button @click="closeMenu" class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors">
+                    <!-- <button v-if="hasActiveChildDialog" @click="closeSubView" class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors" title="Back">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    </button> -->
+                    <button v-if="!hasActiveChildDialog" @click="closeMenu" class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -278,6 +281,7 @@
 
             <!-- Modal Body -->
             <div class="flex flex-col md:flex-row flex-1 overflow-hidden min-h-[400px]">
+                <div v-if="!hasActiveChildDialog" class="contents md:flex md:flex-row w-full h-full">
                 <!-- Pane 1: Order Summary -->
                 <div class="w-full md:w-1/2 p-6 pb-10 border-b md:border-b-0 md:border-r overflow-y-auto bg-white">
                     <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Order Summary</h4>
@@ -557,60 +561,62 @@
                         </div>
                     </div>
                 </div>
+                </div>
+
+                <!-- Release Territory Sub-View -->
+                <div v-else-if="showReleaseDialog" class="w-full p-8 flex flex-col items-center justify-center text-center bg-white h-full overflow-y-auto">
+                    <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4 text-2xl">
+                        ⚠️
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Release Territory</h3>
+                    <p class="text-gray-600 mb-8 max-w-md">It will release the order from the current territory, its associated channel partner and move it to the parent territory. The order may not be visible to you in future.</p>
+                    <div class="flex gap-3">
+                        <Button variant="subtle" size="lg" @click="showReleaseDialog = false">Cancel</Button>
+                        <Button variant="solid" theme="red" size="lg" @click="releaseTerritory" :loading="releasing">Confirm Release</Button>
+                    </div>
+                </div>
+
+                <!-- Change Territory Sub-View -->
+                <div v-else-if="showChangeTerritoryDialog" class="w-full p-6 bg-white h-full overflow-y-auto flex flex-col">
+                    <div class="flex justify-between items-center mb-6 border-b pb-4">
+                        <h3 class="text-xl font-bold text-gray-900">Change Territory</h3>
+                    </div>
+                    <div class="max-w-md mx-auto w-full flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select New Territory</label>
+                        <Autocomplete
+                            v-model="editingTerritoryValue"
+                            :options="territoryOptions"
+                            placeholder="Select Territory"
+                            class="mb-8"
+                        />
+                        <div class="flex justify-end gap-3">
+                            <Button variant="subtle" @click="showChangeTerritoryDialog = false">Cancel</Button>
+                            <Button variant="solid" @click="saveTerritory" :loading="savingTerritory">Update Territory</Button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Change Category Sub-View -->
+                <div v-else-if="showChangeCategoryDialog" class="w-full p-6 bg-white h-full overflow-y-auto flex flex-col">
+                     <div class="flex justify-between items-center mb-6 border-b pb-4">
+                        <h3 class="text-xl font-bold text-gray-900">Change Service Category</h3>
+                    </div>
+                    <div class="max-w-md mx-auto w-full flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select New Category</label>
+                        <select v-model="editingCategoryValue" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white mb-8">
+                            <option v-for="opt in serviceChannels.data" :key="opt.name" :value="opt.name">{{ opt.channel_name }}</option>
+                        </select>
+                        <div class="flex justify-end gap-3">
+                            <Button variant="subtle" @click="showChangeCategoryDialog = false">Cancel</Button>
+                            <Button variant="solid" @click="saveCategory" :loading="savingCategory">Update Category</Button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <Dialog v-model="showReleaseDialog">
-        <template #body-title>
-            <h3 class="text-lg font-bold">Release Territory</h3>
-        </template>
-        <template #body-content>
-            <p class="text-gray-600">It will release the order from the current territory, its associated channel partner and move it to the parent territory and order may not be visible to you in future.</p>
-        </template>
-        <template #actions>
-            <Button variant="subtle" @click="showReleaseDialog = false">Cancel</Button>
-            <Button variant="solid" theme="red" @click="releaseTerritory" :loading="releasing">Confirm Release</Button>
-        </template>
-    </Dialog>
 
-    <Dialog v-model="showChangeTerritoryDialog">
-        <template #body-title>
-            <h3 class="text-lg font-bold">Change Territory</h3>
-        </template>
-        <template #body-content>
-            <div class="mt-2">
-                <label class="block text-xs font-medium text-gray-500 mb-1">Select New Territory</label>
-                <Autocomplete
-                    v-model="editingTerritoryValue"
-                    :options="territoryOptions"
-                    placeholder="Select Territory"
-                />
-            </div>
-        </template>
-        <template #actions>
-            <Button variant="subtle" @click="showChangeTerritoryDialog = false">Cancel</Button>
-            <Button variant="solid" @click="saveTerritory" :loading="savingTerritory">Update</Button>
-        </template>
-    </Dialog>
-
-    <Dialog v-model="showChangeCategoryDialog">
-        <template #body-title>
-            <h3 class="text-lg font-bold">Change Service Category</h3>
-        </template>
-        <template #body-content>
-            <div class="mt-2">
-                <label class="block text-xs font-medium text-gray-500 mb-1">Select New Category</label>
-                <select v-model="editingCategoryValue" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                    <option v-for="opt in serviceChannels.data" :key="opt.name" :value="opt.name">{{ opt.channel_name }}</option>
-                </select>
-            </div>
-        </template>
-        <template #actions>
-            <Button variant="subtle" @click="showChangeCategoryDialog = false">Cancel</Button>
-            <Button variant="solid" @click="saveCategory" :loading="savingCategory">Update</Button>
-        </template>
-    </Dialog>
 
     <!-- Overlay for filters -->
     <div v-if="showFilters" class="fixed inset-0 bg-black bg-opacity-20 z-40" @click="showFilters = false"></div>
@@ -1435,10 +1441,22 @@ const showChangeCategoryDialog = ref(false)
 const editingCategoryValue = ref(null)
 const savingCategory = ref(false)
 
+
 function openChangeCategoryDialog() {
     editingCategoryValue.value = activeOrder.value.service_category
     showChangeCategoryDialog.value = true
 }
+
+const hasActiveChildDialog = computed(() => {
+    return showReleaseDialog.value || showChangeTerritoryDialog.value || showChangeCategoryDialog.value
+})
+
+function closeSubView() {
+    showReleaseDialog.value = false
+    showChangeTerritoryDialog.value = false
+    showChangeCategoryDialog.value = false
+}
+
 
 const updateCategoryResource = createResource({
     url: 'connect_master.api.update_service_category'
