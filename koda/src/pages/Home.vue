@@ -88,7 +88,7 @@
 
     <div v-else class="space-y-8">
       <!-- Dashboard for Logged In Users -->
-      
+      <AnnouncementTicker location="Customer Dashboard" :announcements="customerAnnouncements.data" containerClass="w-full" />
       <!-- Top Pane: Actions -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Left Pane: Manage Actions -->
@@ -343,6 +343,14 @@ const publicAnnouncements = createResource({
     url: 'connect_master.connect_master.doctype.connect_announcement.connect_announcement.get_active_announcements',
     params: {
         location: 'Public'
+    },
+    auto: false
+})
+
+const customerAnnouncements = createResource({
+    url: 'connect_master.connect_master.doctype.connect_announcement.connect_announcement.get_active_announcements',
+    params: {
+        location: 'Customer Dashboard'
     },
     auto: false
 })
@@ -642,6 +650,7 @@ onMounted(async () => {
 
     const data = await session.fetch()
     if (data && data !== 'Guest') {
+        customerAnnouncements.fetch()
         await addresses.fetch()
         contacts.fetch()
         ordersCount.fetch()
