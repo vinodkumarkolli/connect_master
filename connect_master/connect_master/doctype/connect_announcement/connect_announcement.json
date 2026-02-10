@@ -8,7 +8,7 @@
   "announcement_type",
   "display_location",
   "column_break_vrck",
-  "disabled",
+  "active",
   "display_html"
  ],
  "fields": [
@@ -39,7 +39,7 @@
   },
   {
    "default": "0",
-   "fieldname": "disabled",
+   "fieldname": "active",
    "fieldtype": "Check",
    "label": "Active"
   }
@@ -47,7 +47,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-10 09:34:13.569993",
+ "modified": "2026-02-10 10:33:36.184010",
  "modified_by": "Administrator",
  "module": "Connect Master",
  "name": "Connect Announcement",
@@ -64,6 +64,51 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Partner Admin",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Territory Admin",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Customer",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

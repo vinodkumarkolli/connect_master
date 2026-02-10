@@ -5,6 +5,11 @@
     </div>
 
     <div v-else-if="!session.data || session.data === 'Guest'">
+      <!-- Announcement Ticker -->
+      <!-- Announcement Ticker -->
+      <!-- Announcement Ticker -->
+      <AnnouncementTicker location="Public" :announcements="publicAnnouncements.data" containerClass="w-full" />
+
       <!-- Step 1: Welcome -->
       <div class="text-center space-y-6 py-12 md:py-20 bg-white p-4 md:p-6 rounded-lg shadow border border-gray-100">
         <h1 class="text-5xl font-bold text-gray-900 flex items-center justify-center">
@@ -311,9 +316,10 @@
 
 <script setup>
 import { ref, reactive, onMounted, watch, computed } from 'vue'
-import { Button, frappeRequest, createResource, createListResource, Alert } from 'frappe-ui'
+import { Button, frappeRequest, createResource, Alert } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import Communication from '../components/Communication.vue'
+import AnnouncementTicker from '../components/AnnouncementTicker.vue'
 import { useConsumerValidation } from '../composables/useConsumerValidation'
 import { useSession } from '../composables/useSession'
 
@@ -332,6 +338,14 @@ const session = useSession()
 
 const displayedText = ref('')
 const fullText = 'Koda'
+
+const publicAnnouncements = createResource({
+    url: 'connect_master.connect_master.doctype.connect_announcement.connect_announcement.get_active_announcements',
+    params: {
+        location: 'Public'
+    },
+    auto: false
+})
 
 const addresses = createResource({
     url: 'frappe.client.get_list',
@@ -633,6 +647,9 @@ onMounted(async () => {
         ordersCount.fetch()
         orders.fetch()
         checkAndPrompt()
+    } else {
+        await publicAnnouncements.fetch()
+        console.log('Public Announcements:', publicAnnouncements.data)
     }
 
 })
