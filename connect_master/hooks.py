@@ -91,6 +91,7 @@ role_home_page = {
 
 # before_install = "connect_master.install.before_install"
 after_install = "connect_master.utils.after_install"
+after_migrate = "connect_master.utils.after_install"
 
 # Uninstallation
 # ------------

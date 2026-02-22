@@ -52,6 +52,7 @@ def create_roles():
         system_manager_role.home_page = "/desk"
         system_manager_role.save()
 
+@frappe.whitelist()
 def set_role_permissions():
     """Set permissions for the roles."""
     # For Customer role, grant access to Address and Item doctypes
@@ -81,6 +82,21 @@ def set_role_permissions():
             "read": 1,
             "write": 0,
             "create": 0,
+            "delete": 0,
+            "submit": 0,
+            "cancel": 0,
+            "amend": 0
+        }).insert()
+    if not frappe.db.exists("Custom DocPerm", {"role": "Sales User", "parent": "Address"}):
+        frappe.get_doc({
+            "doctype": "Custom DocPerm",
+            "role": "Sales User",
+            "parent": "Address",
+            "parenttype": "DocType",
+            "permlevel": 0,
+            "read": 1,
+            "write": 1,
+            "create": 1,
             "delete": 0,
             "submit": 0,
             "cancel": 0,
