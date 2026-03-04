@@ -5,6 +5,25 @@ def after_install():
     create_commerce_domain()
     create_roles()
     set_role_permissions()
+    create_global_sales_user()
+
+def create_global_sales_user():
+    """Create a Global Sales User if it doesn't exist."""
+    email = "globalsales@example.com"
+    if not frappe.db.exists("User", email):
+        user = frappe.get_doc({
+            "doctype": "User",
+            "email": email,
+            "first_name": "Global Sales",
+            "send_welcome_email": 0,
+            "user_type": "System User"
+        })
+        user.insert(ignore_permissions=True)
+    
+    # Ensure the user has the "Sales User" role
+    if "Sales User" not in frappe.get_roles(email):
+        user = frappe.get_doc("User", email)
+        user.add_roles("Sales User")
 
 def after_uninstall():
     """Remove roles and permissions when app is uninstalled."""
