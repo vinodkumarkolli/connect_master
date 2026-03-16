@@ -247,6 +247,7 @@ scheduler_events = {
 fixtures = [
     # Export all Custom Fields
     {"dt": "Custom Field","filters": [["module", "in", ["Connect Master"]]]},
+    {"dt": "Client Script","filters": [["module", "in", ["Connect Master"]]]},
     {"dt": "Custom DocPerm"},
     # Export all Property Setters
     # {"dt": "Service Territory"},
