@@ -45,7 +45,7 @@ def create_roles():
         frappe.get_doc({
             "doctype": "Role",
             "role_name": "Territory Admin",
-            "desk_access": 1,
+            "desk_access": 0,
             "home_page": "/koda/dash"
         }).insert()
     
@@ -54,7 +54,7 @@ def create_roles():
         frappe.get_doc({
             "doctype": "Role",
             "role_name": "Partner Admin",
-            "desk_access": 1,
+            "desk_access": 0,
             "home_page": "/koda/dash"
         }).insert()
 
@@ -165,3 +165,20 @@ def reset_guest_homepage():
     if frappe.db.exists("Role", "Guest"):
         guest_role = frappe.get_doc("Role", "Guest")
         guest_role.save()
+
+def get_user_home_page(user):
+    """Override default homepage for System Users, but respect portal roles."""
+    if not user or user == "Guest":
+        return None
+        
+    user_roles = frappe.get_roles(user)
+    
+    # If the user has a specific portal role, let hooks.role_home_page handle their routing
+    if any(role in user_roles for role in ["Customer", "Partner Admin", "Territory Admin"]):
+        return None
+        
+    user_type = frappe.db.get_value("User", user, "user_type")
+    if user_type == "System User":
+        return "desk"
+        
+    return None

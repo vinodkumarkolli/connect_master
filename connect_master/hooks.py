@@ -68,6 +68,8 @@ role_home_page = {
     "System Manager":"desk"
 }
 
+get_website_user_home_page = "connect_master.utils.get_user_home_page"
+
 # Generators
 # ----------
 
