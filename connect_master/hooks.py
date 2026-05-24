@@ -11,15 +11,15 @@ app_license = "mit"
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
-add_to_apps_screen = [
-    {
-		"name": "connect_master",
-		"logo": "/assets/connect_master/images/radar-logo.png",
-		"title": "Connect Master",
-		"route": "/koda",
-		#"has_permission": "connect_master.api.permission.has_app_permission"
-	}
-]
+# add_to_apps_screen = [
+#     {
+# 		"name": "connect_master",
+# 		"logo": "/assets/connect_master/images/radar-logo.png",
+# 		"title": "Connect Master",
+# 		"route": "/koda",
+# 		#"has_permission": "connect_master.api.permission.has_app_permission"
+# 	}
+# ]
 	
 
 # Includes in <head>
@@ -61,12 +61,12 @@ add_to_apps_screen = [
 home_page = "koda"
 
 # website user home page (by Role)
-role_home_page = {
-	"Customer": "koda",
-    "Partner Admin":"koda/dash",
-    "Territory Admin":"koda/dash",
-    "System Manager":"desk"
-}
+# role_home_page = {
+# 	"Customer": "koda",
+#     "Partner Admin":"koda/dash",
+#     "Territory Admin":"koda/dash",
+#     "System Manager":"desk"
+# }
 
 get_website_user_home_page = "connect_master.utils.get_user_home_page"
 
@@ -248,7 +248,6 @@ fixtures = [
     # Export all Custom Fields
     {"dt": "Custom Field","filters": [["module", "in", ["Connect Master"]]]},
     {"dt": "Client Script","filters": [["module", "in", ["Connect Master"]]]},
-    {"dt": "Custom DocPerm"},
     # Export all Property Setters
     # {"dt": "Service Territory"},
     # Export specific Clients Scripts

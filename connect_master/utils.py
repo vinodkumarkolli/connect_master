@@ -39,24 +39,41 @@ def create_roles():
             "role_name": "Customer",
             "desk_access": 0
         }).insert()
+    else:
+        # Update existing Customer role to ensure no desk access
+        customer_role = frappe.get_doc("Role", "Customer")
+        if customer_role.desk_access != 0 or customer_role.home_page:
+            customer_role.desk_access = 0
+            customer_role.home_page = ""
+            customer_role.save()
     
     # Create Territory Admin role (desk access, limited to Radar app)
     if not frappe.db.exists("Role", "Territory Admin"):
         frappe.get_doc({
             "doctype": "Role",
             "role_name": "Territory Admin",
-            "desk_access": 0,
-            "home_page": "/koda/dash"
+            "desk_access": 0
         }).insert()
+    else:
+        ta_role = frappe.get_doc("Role", "Territory Admin")
+        if ta_role.desk_access != 0 or ta_role.home_page:
+            ta_role.desk_access = 0
+            ta_role.home_page = ""
+            ta_role.save()
     
     # Create Partner Admin role (desk access, limited to Radar app)
     if not frappe.db.exists("Role", "Partner Admin"):
         frappe.get_doc({
             "doctype": "Role",
             "role_name": "Partner Admin",
-            "desk_access": 0,
-            "home_page": "/koda/dash"
+            "desk_access": 0
         }).insert()
+    else:
+        pa_role = frappe.get_doc("Role", "Partner Admin")
+        if pa_role.desk_access != 0 or pa_role.home_page:
+            pa_role.desk_access = 0
+            pa_role.home_page = ""
+            pa_role.save()
 
     # Create System Manager role if it doesn't exist (usually it does)
     if not frappe.db.exists("Role", "System Manager"):
@@ -71,56 +88,69 @@ def create_roles():
         system_manager_role.home_page = "/desk"
         system_manager_role.save()
 
+    # Clean up customer@example.com user type if it exists
+    if frappe.db.exists("User", "customer@example.com"):
+        customer_user = frappe.get_doc("User", "customer@example.com")
+        if customer_user.user_type != "Website User":
+            customer_user.user_type = "Website User"
+            customer_user.save(ignore_permissions=True)
+
 @frappe.whitelist()
 def set_role_permissions():
-    """Set permissions for the roles."""
-    # For Customer role, grant access to Address and Item doctypes
-    if not frappe.db.exists("Custom DocPerm", {"role": "Customer", "parent": "Address"}):
-        frappe.get_doc({
+    """Set permissions for the roles programmatically."""
+    permissions = [
+        # parent, role, permlevel, permissions_dict
+        ("Address", "Customer", 0, {"read": 1, "write": 1, "create": 1, "export": 1}),
+        ("Address", "Sales User", 0, {"read": 1, "write": 1, "create": 1, "export": 1}),
+        ("Address", "Territory Admin", 0, {"read": 1, "write": 1, "create": 1, "export": 1}),
+        ("Address", "Partner Admin", 0, {"read": 1, "write": 0, "create": 0, "print": 1, "share": 1, "export": 1}),
+        
+        ("Item", "Customer", 0, {"read": 1, "write": 0, "create": 0, "export": 1}),
+        
+        ("Contact", "Territory Admin", 0, {"read": 1, "write": 1, "create": 1, "export": 1}),
+        ("Contact", "Partner Admin", 0, {"read": 1, "write": 0, "create": 0, "print": 1, "report": 1, "share": 1, "export": 1}),
+        ("Contact", "System Manager", 0, {"read": 1, "write": 1, "create": 1, "delete": 1, "print": 1, "email": 1, "report": 1, "share": 1, "export": 1, "import": 1}),
+        ("Contact", "Sales Master Manager", 0, {"read": 1, "write": 1, "create": 1, "delete": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Purchase Master Manager", 0, {"read": 1, "write": 1, "create": 1, "delete": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Sales Manager", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Purchase Manager", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Maintenance Manager", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Accounts Manager", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Sales User", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Purchase User", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Maintenance User", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Accounts User", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "All", 0, {"read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "if_owner": 1}),
+    ]
+
+    for parent, role, permlevel, perm_dict in permissions:
+        # Check if custom permission exists for role & doctype
+        name = frappe.db.get_value("Custom DocPerm", {"parent": parent, "role": role, "permlevel": permlevel})
+        
+        doc_data = {
             "doctype": "Custom DocPerm",
-            "role": "Customer",
-            "parent": "Address",
+            "parent": parent,
             "parenttype": "DocType",
-            "permlevel": 0,
-            "read": 1,
-            "write": 1,
-            "create": 1,
-            "delete": 0,
-            "submit": 0,
-            "cancel": 0,
-            "amend": 0
-        }).insert()
-    
-    if not frappe.db.exists("Custom DocPerm", {"role": "Customer", "parent": "Item"}):
-        frappe.get_doc({
-            "doctype": "Custom DocPerm",
-            "role": "Customer",
-            "parent": "Item",
-            "parenttype": "DocType",
-            "permlevel": 0,
-            "read": 1,
-            "write": 0,
-            "create": 0,
-            "delete": 0,
-            "submit": 0,
-            "cancel": 0,
-            "amend": 0
-        }).insert()
-    if not frappe.db.exists("Custom DocPerm", {"role": "Sales User", "parent": "Address"}):
-        frappe.get_doc({
-            "doctype": "Custom DocPerm",
-            "role": "Sales User",
-            "parent": "Address",
-            "parenttype": "DocType",
-            "permlevel": 0,
-            "read": 1,
-            "write": 1,
-            "create": 1,
-            "delete": 0,
-            "submit": 0,
-            "cancel": 0,
-            "amend": 0
-        }).insert()
+            "role": role,
+            "permlevel": permlevel,
+        }
+        
+        standard_fields = ["read", "write", "create", "delete", "submit", "cancel", "amend", "print", "email", "report", "share", "export", "import", "if_owner"]
+        for field in standard_fields:
+            doc_data[field] = perm_dict.get(field, 0)
+            
+        if name:
+            doc = frappe.get_doc("Custom DocPerm", name)
+            updated = False
+            for key, val in doc_data.items():
+                if key != "doctype" and doc.get(key) != val:
+                    doc.set(key, val)
+                    updated = True
+            if updated:
+                doc.save(ignore_permissions=True)
+        else:
+            doc = frappe.get_doc(doc_data)
+            doc.insert(ignore_permissions=True)
 
 def disable_roles():
     """Disable the custom roles when the app is uninstalled."""
@@ -167,19 +197,17 @@ def reset_guest_homepage():
         guest_role.save()
 
 def get_user_home_page(user):
-    """Override default homepage for System Users, but respect portal roles."""
+    """Override homepage routing based on user type and roles."""
     if not user or user == "Guest":
-        return None
-        
-    user_roles = frappe.get_roles(user)
-    
-    # If the user has a specific portal role, let hooks.role_home_page handle their routing
-    if any(role in user_roles for role in ["Customer", "Partner Admin", "Territory Admin"]):
         return None
         
     user_type = frappe.db.get_value("User", user, "user_type")
     if user_type == "System User":
         return "desk"
+        
+    user_roles = frappe.get_roles(user)
+    if any(role in user_roles for role in ["Customer", "Partner Admin", "Territory Admin"]):
+        return "koda/dash"
         
     return None
 

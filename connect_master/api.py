@@ -204,6 +204,8 @@ def send_otp(email, full_name=None):
             user = frappe.new_doc("User")
             user.email = email
             user.first_name = full_name
+            user.user_type = "Website User"
+            user.default_app = "connect_master"
             user.enabled = 1
             user.insert(ignore_permissions=True)
             user.add_roles("Customer")

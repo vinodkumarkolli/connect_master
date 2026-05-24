@@ -92,3 +92,46 @@ class IntegrationTestConnectOrder(IntegrationTestCase):
 		
 		self.assertIn("Partner 1", partner_names)
 		self.assertIn("Partner 2", partner_names)
+
+	def test_create_website_user(self):
+		from connect_master.api import send_otp
+		
+		# Ensure user doesn't exist
+		if frappe.db.exists("User", "test_website_user@example.com"):
+			frappe.delete_doc("User", "test_website_user@example.com")
+			frappe.db.commit()
+
+		# Ensure Connect Email Settings exists for the test
+		if not frappe.db.exists("Connect Email Settings"):
+			frappe.get_doc({
+				"doctype": "Connect Email Settings",
+				"settings_type": "Frappe Inbuilt"
+			}).insert()
+
+		# Ensure Login Template exists for the test
+		if not frappe.db.exists("Email Template", "Login Template"):
+			frappe.get_doc({
+				"doctype": "Email Template",
+				"name": "Login Template",
+				"subject": "Login OTP",
+				"response": "Your OTP is [[otp]]"
+			}).insert()
+
+		original_sendmail = frappe.sendmail
+		frappe.sendmail = lambda *args, **kwargs: None
+		try:
+			send_otp("test_website_user@example.com", "Test Website User")
+		except Exception as e:
+			print(f"Exception during send_otp: {e}")
+		finally:
+			frappe.sendmail = original_sendmail
+
+		# Check if user exists and has the correct fields
+		self.assertTrue(frappe.db.exists("User", "test_website_user@example.com"))
+		user = frappe.get_doc("User", "test_website_user@example.com")
+		self.assertEqual(user.user_type, "Website User")
+		self.assertEqual(user.default_app, "connect_master")
+		
+		# Clean up
+		frappe.delete_doc("User", "test_website_user@example.com")
+		frappe.db.commit()
