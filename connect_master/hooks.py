@@ -58,7 +58,7 @@ app_license = "mit"
 # ----------
 
 # application home page (will override Website Settings)
-#home_page = "koda"
+home_page = "koda"
 
 # website user home page (by Role)
 # role_home_page = {
