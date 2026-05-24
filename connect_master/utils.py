@@ -39,24 +39,41 @@ def create_roles():
             "role_name": "Customer",
             "desk_access": 0
         }).insert()
+    else:
+        # Update existing Customer role to ensure no desk access
+        customer_role = frappe.get_doc("Role", "Customer")
+        if customer_role.desk_access != 0 or customer_role.home_page:
+            customer_role.desk_access = 0
+            customer_role.home_page = ""
+            customer_role.save()
     
     # Create Territory Admin role (desk access, limited to Radar app)
     if not frappe.db.exists("Role", "Territory Admin"):
         frappe.get_doc({
             "doctype": "Role",
             "role_name": "Territory Admin",
-            "desk_access": 0,
-            "home_page": "/koda/dash"
+            "desk_access": 0
         }).insert()
+    else:
+        ta_role = frappe.get_doc("Role", "Territory Admin")
+        if ta_role.desk_access != 0 or ta_role.home_page:
+            ta_role.desk_access = 0
+            ta_role.home_page = ""
+            ta_role.save()
     
     # Create Partner Admin role (desk access, limited to Radar app)
     if not frappe.db.exists("Role", "Partner Admin"):
         frappe.get_doc({
             "doctype": "Role",
             "role_name": "Partner Admin",
-            "desk_access": 0,
-            "home_page": "/koda/dash"
+            "desk_access": 0
         }).insert()
+    else:
+        pa_role = frappe.get_doc("Role", "Partner Admin")
+        if pa_role.desk_access != 0 or pa_role.home_page:
+            pa_role.desk_access = 0
+            pa_role.home_page = ""
+            pa_role.save()
 
     # Create System Manager role if it doesn't exist (usually it does)
     if not frappe.db.exists("Role", "System Manager"):
@@ -70,6 +87,13 @@ def create_roles():
         system_manager_role = frappe.get_doc("Role", "System Manager")
         system_manager_role.home_page = "/desk"
         system_manager_role.save()
+
+    # Clean up customer@example.com user type if it exists
+    if frappe.db.exists("User", "customer@example.com"):
+        customer_user = frappe.get_doc("User", "customer@example.com")
+        if customer_user.user_type != "Website User":
+            customer_user.user_type = "Website User"
+            customer_user.save(ignore_permissions=True)
 
 @frappe.whitelist()
 def set_role_permissions():
@@ -173,19 +197,17 @@ def reset_guest_homepage():
         guest_role.save()
 
 def get_user_home_page(user):
-    """Override default homepage for System Users, but respect portal roles."""
+    """Override homepage routing based on user type and roles."""
     if not user or user == "Guest":
-        return None
-        
-    user_roles = frappe.get_roles(user)
-    
-    # If the user has a specific portal role, let hooks.role_home_page handle their routing
-    if any(role in user_roles for role in ["Customer", "Partner Admin", "Territory Admin"]):
         return None
         
     user_type = frappe.db.get_value("User", user, "user_type")
     if user_type == "System User":
         return "desk"
+        
+    user_roles = frappe.get_roles(user)
+    if any(role in user_roles for role in ["Customer", "Partner Admin", "Territory Admin"]):
+        return "koda/dash"
         
     return None
 

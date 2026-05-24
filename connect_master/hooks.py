@@ -68,7 +68,7 @@ app_license = "mit"
 #     "System Manager":"desk"
 # }
 
-# get_website_user_home_page = "connect_master.utils.get_user_home_page"
+get_website_user_home_page = "connect_master.utils.get_user_home_page"
 
 # Generators
 # ----------
@@ -260,4 +260,4 @@ fixtures = [
     # {"dt":"Connect Channel Partner"}
 ]
 
-# website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}]
+website_route_rules = [{'from_route': '/koda/<path:app_path>', 'to_route': 'koda'}]
