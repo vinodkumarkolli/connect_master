@@ -73,54 +73,60 @@ def create_roles():
 
 @frappe.whitelist()
 def set_role_permissions():
-    """Set permissions for the roles."""
-    # For Customer role, grant access to Address and Item doctypes
-    if not frappe.db.exists("Custom DocPerm", {"role": "Customer", "parent": "Address"}):
-        frappe.get_doc({
+    """Set permissions for the roles programmatically."""
+    permissions = [
+        # parent, role, permlevel, permissions_dict
+        ("Address", "Customer", 0, {"read": 1, "write": 1, "create": 1, "export": 1}),
+        ("Address", "Sales User", 0, {"read": 1, "write": 1, "create": 1, "export": 1}),
+        ("Address", "Territory Admin", 0, {"read": 1, "write": 1, "create": 1, "export": 1}),
+        ("Address", "Partner Admin", 0, {"read": 1, "write": 0, "create": 0, "print": 1, "share": 1, "export": 1}),
+        
+        ("Item", "Customer", 0, {"read": 1, "write": 0, "create": 0, "export": 1}),
+        
+        ("Contact", "Territory Admin", 0, {"read": 1, "write": 1, "create": 1, "export": 1}),
+        ("Contact", "Partner Admin", 0, {"read": 1, "write": 0, "create": 0, "print": 1, "report": 1, "share": 1, "export": 1}),
+        ("Contact", "System Manager", 0, {"read": 1, "write": 1, "create": 1, "delete": 1, "print": 1, "email": 1, "report": 1, "share": 1, "export": 1, "import": 1}),
+        ("Contact", "Sales Master Manager", 0, {"read": 1, "write": 1, "create": 1, "delete": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Purchase Master Manager", 0, {"read": 1, "write": 1, "create": 1, "delete": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Sales Manager", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Purchase Manager", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Maintenance Manager", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Accounts Manager", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Sales User", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Purchase User", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Maintenance User", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "Accounts User", 0, {"read": 1, "write": 1, "create": 1, "print": 1, "email": 1, "report": 1, "share": 1}),
+        ("Contact", "All", 0, {"read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "if_owner": 1}),
+    ]
+
+    for parent, role, permlevel, perm_dict in permissions:
+        # Check if custom permission exists for role & doctype
+        name = frappe.db.get_value("Custom DocPerm", {"parent": parent, "role": role, "permlevel": permlevel})
+        
+        doc_data = {
             "doctype": "Custom DocPerm",
-            "role": "Customer",
-            "parent": "Address",
+            "parent": parent,
             "parenttype": "DocType",
-            "permlevel": 0,
-            "read": 1,
-            "write": 1,
-            "create": 1,
-            "delete": 0,
-            "submit": 0,
-            "cancel": 0,
-            "amend": 0
-        }).insert()
-    
-    if not frappe.db.exists("Custom DocPerm", {"role": "Customer", "parent": "Item"}):
-        frappe.get_doc({
-            "doctype": "Custom DocPerm",
-            "role": "Customer",
-            "parent": "Item",
-            "parenttype": "DocType",
-            "permlevel": 0,
-            "read": 1,
-            "write": 0,
-            "create": 0,
-            "delete": 0,
-            "submit": 0,
-            "cancel": 0,
-            "amend": 0
-        }).insert()
-    if not frappe.db.exists("Custom DocPerm", {"role": "Sales User", "parent": "Address"}):
-        frappe.get_doc({
-            "doctype": "Custom DocPerm",
-            "role": "Sales User",
-            "parent": "Address",
-            "parenttype": "DocType",
-            "permlevel": 0,
-            "read": 1,
-            "write": 1,
-            "create": 1,
-            "delete": 0,
-            "submit": 0,
-            "cancel": 0,
-            "amend": 0
-        }).insert()
+            "role": role,
+            "permlevel": permlevel,
+        }
+        
+        standard_fields = ["read", "write", "create", "delete", "submit", "cancel", "amend", "print", "email", "report", "share", "export", "import", "if_owner"]
+        for field in standard_fields:
+            doc_data[field] = perm_dict.get(field, 0)
+            
+        if name:
+            doc = frappe.get_doc("Custom DocPerm", name)
+            updated = False
+            for key, val in doc_data.items():
+                if key != "doctype" and doc.get(key) != val:
+                    doc.set(key, val)
+                    updated = True
+            if updated:
+                doc.save(ignore_permissions=True)
+        else:
+            doc = frappe.get_doc(doc_data)
+            doc.insert(ignore_permissions=True)
 
 def disable_roles():
     """Disable the custom roles when the app is uninstalled."""
