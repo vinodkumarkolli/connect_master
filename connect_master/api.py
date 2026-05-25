@@ -1181,3 +1181,59 @@ def download_orders_csv(filters=None, search=None, status=None):
                 data.append(row)
                 
     return data
+
+
+@frappe.whitelist(allow_guest=True)
+def resolve_territory(address=None, pincode=None, city=None):
+    """Resolve territory based on address pincode, city, or root fallback."""
+    if address:
+        if isinstance(address, str):
+            try:
+                address = json.loads(address)
+            except Exception:
+                address = frappe.parse_json(address)
+        if isinstance(address, dict):
+            pincode = address.get("pincode") or pincode
+            city = address.get("city") or city
+
+    # 1. Pincode
+    if pincode:
+        pincode_str = str(pincode).strip()
+        # Try exact match on name first
+        if frappe.db.exists("Service Territory", pincode_str):
+            return pincode_str
+
+        # Fallback to territory_name search
+        st = frappe.get_all(
+            "Service Territory",
+            filters={"territory_name": pincode_str},
+            limit=1,
+            pluck="name"
+        )
+        if st:
+            return st[0]
+
+    # 2. City
+    if city:
+        city_str = str(city).strip()
+        st = frappe.get_all(
+            "Service Territory",
+            filters={"territory_name": city_str, "allow_in_search": 1},
+            limit=1,
+            pluck="name"
+        )
+        if st:
+            return st[0]
+
+    # 3. Parent most (Root)
+    st = frappe.get_all(
+        "Service Territory",
+        filters={"parent_service_territory": ("is", "not set")},
+        limit=1,
+        pluck="name"
+    )
+    if st:
+        return st[0]
+
+    return None
+

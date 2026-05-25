@@ -438,66 +438,18 @@ const updateContact = createResource({
 })
 
 async function resolveTerritory(address) {
-    // 1. Pincode
-    if (address.pincode) {
-        const pincode = address.pincode.toString().trim()
-        // Try exact match on name first
-        try {
-             let res = await frappeRequest({
-                url: 'frappe.client.get_value',
-                params: {
-                    doctype: 'Service Territory',
-                    fieldname: 'name',
-                    filters: { name: pincode }
-                }
-            })
-            const val = res.message || res
-            if (val && val.name) return val.name
-        } catch (e) {
-            // ignore
-        }
-
-        // Fallback to territory_name search
+    try {
         let res = await frappeRequest({
-            url: 'frappe.client.get_list',
+            url: 'connect_master.api.resolve_territory',
             params: {
-                doctype: 'Service Territory',
-                filters: [['territory_name', '=', pincode]],
-                limit_page_length: 1
+                address: address
             }
         })
-        const list = res.message || res
-        if (Array.isArray(list) && list.length > 0) return list[0].name
+        return res.message || res
+    } catch (e) {
+        console.error("Territory resolution failed", e)
+        return null
     }
-
-    // 2. City
-    if (address.city) {
-        const city = address.city.toString().trim()
-        let res = await frappeRequest({
-            url: 'frappe.client.get_list',
-            params: {
-                doctype: 'Service Territory',
-                filters: [['territory_name', '=', city], ['allow_in_search', '=', 1]],
-                limit_page_length: 1
-            }
-        })
-        const list = res.message || res
-        if (Array.isArray(list) && list.length > 0) return list[0].name
-    }
-
-    // 3. Parent most (Root)
-    let res = await frappeRequest({
-        url: 'frappe.client.get_list',
-        params: {
-            doctype: 'Service Territory',
-            filters: [['parent_service_territory', '=', '']],
-            limit_page_length: 1
-        }
-    })
-    const list = res.message || res
-    if (Array.isArray(list) && list.length > 0) return list[0].name
-    
-    return null
 }
 
 async function submit() {
