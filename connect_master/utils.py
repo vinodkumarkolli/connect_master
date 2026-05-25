@@ -6,6 +6,15 @@ def after_install():
     create_roles()
     set_role_permissions()
     create_global_sales_user()
+    ensure_homepage_default()
+
+def ensure_homepage_default():
+    """Ensure setup is complete and home page default is correct to prevent redirect loops."""
+    if frappe.db.get_single_value("System Settings", "setup_complete"):
+        current_default = frappe.db.get_value("DefaultValue", {"defkey": "desktop:home_page", "parent": "__default"}, "defvalue")
+        if current_default == "setup-wizard":
+            frappe.db.set_default("desktop:home_page", "workspace")
+            frappe.db.commit()
 
 def create_global_sales_user():
     """Create a Global Sales User if it doesn't exist."""
